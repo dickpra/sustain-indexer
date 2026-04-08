@@ -42,7 +42,7 @@
         
         <div class="footer">
             <p style="margin: 0;">This is an automated message from the indexing system. If you did not submit this document, please disregard this email.</p>
-            <p style="margin: 10px 0 0 0; font-weight: bold;">&copy; {{ date('Y') }} SustainDex Indexing System. All rights reserved.</p>
+            <p style="margin: 10px 0 0 0; font-weight: bold;">&copy; {{ date('Y') }} SustainDex System. All rights reserved.</p>
         </div>
     </div>
 </body>

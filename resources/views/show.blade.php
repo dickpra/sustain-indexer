@@ -133,7 +133,7 @@
         </div>
         
         <div class="text-center mt-4 pt-3 border-top small text-muted">
-            &copy; 2026 SustainDex Indexing System. All rights reserved.
+            &copy; {{ date('Y') }} SustainDex Indexing System. All rights reserved.
         </div>
     </div>
 </footer>
