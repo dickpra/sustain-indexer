@@ -6,6 +6,31 @@
     <title>{{ $document->title }} - SustainDex</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        /* ================= RESPONSIVE (MOBILE & TABLET) ================= */
+        @media (max-width: 768px) {
+            /* Mengecilkan jarak kotak putih utama */
+            .main-container { padding: 20px 15px; margin-top: 20px; margin-bottom: 30px; }
+            
+            /* Mengecilkan judul agar tidak pecah */
+            .academic-title { font-size: 1.4rem; }
+            .section-title { font-size: 1.1em; margin-top: 20px; }
+            
+            /* Memperbaiki menu Header di HP agar turun ke bawah logo */
+            .academic-header .container { flex-direction: column; text-align: center; gap: 10px; }
+            .academic-nav { display: flex !important; justify-content: center; gap: 15px; width: 100%; margin: 0; padding: 0; }
+            .academic-nav a { margin: 0; font-size: 0.9rem; }
+
+            /* Membuat tombol-tombol utama jadi Full-Width (selebar layar) di HP */
+            .btn-academic, .btn-secondary-academic { width: 100%; margin-bottom: 10px; display: block; }
+            
+            /* Khusus tombol Step 2 (Edit & Submit) agar bertumpuk */
+            .d-flex.justify-content-between.mt-5 { flex-direction: column-reverse; gap: 10px; }
+            .d-flex.justify-content-between.mt-5 button { width: 100%; }
+
+            /* Menyesuaikan Footer */
+            .academic-footer .text-md-end { text-align: left !important; margin-top: 20px; }
+            .academic-footer .btn { width: auto; display: inline-block; }
+        }
         /* --- HEADER & FOOTER SUSTAINDEX --- */
         .academic-header { background-color: #003366; color: white; padding: 15px 0; border-bottom: 4px solid #cc0000; }
         .academic-header a { color: white; text-decoration: none; }

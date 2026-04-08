@@ -137,7 +137,7 @@
                     <div class="alert alert-warning rounded-0 border-0" style="background-color: #fff8e1; color: #856404; border-left: 4px solid #ffeeba !important;">
                         Please review your submission details listed below. If you need to modify any details, please use the <b>Edit</b> button to go back to the submission form. Once you have confirmed that your submission details are correct, you must click the <b>Final Submit</b> button to complete your submission.
                     </div>
-
+                <div class="table-responsive border mb-4">
                     <table class="table review-table w-100 mt-4">
                         <tbody>
                             <tr><th>Title</th><td id="rev_title"></td></tr>
@@ -152,6 +152,7 @@
                             <tr><th>Submitter Email</th><td id="rev_email"></td></tr>
                         </tbody>
                     </table>
+                </div>
 
                     <div class="d-flex justify-content-between mt-5 pt-3 border-top">
                         <button type="button" class="btn btn-secondary-academic btn-lg" id="btnBackToForm">&larr; Edit Details</button>

@@ -6,6 +6,22 @@
     <title>SustainDex - Academic Index</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        /* ================= RESPONSIVE KHUSUS HOME (MOBILE) ================= */
+        @media (max-width: 768px) {
+            /* Mengecilkan Logo Raksasa */
+            .brand-logo { font-size: 2.8rem; margin-bottom: 20px; text-align: center; }
+            
+            /* Mengatur menu pojok kanan atas agar ketengah dan tidak melayang berantakan */
+            .nav-top { position: static; margin-top: 20px; margin-bottom: 30px; text-align: center; width: 100%; }
+            .nav-top a { display: inline-block; padding: 8px 20px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 20px; }
+            
+            /* Memperbaiki Kotak Pencarian */
+            .search-box { padding: 0 15px; }
+            .search-input { font-size: 1rem; padding: 12px 20px; }
+            
+            /* Membuat tombol Search & Submit sejajar atas bawah dan full width */
+            .btn-action { display: block; width: 100%; margin: 10px 0; }
+        }
         /* --- HEADER & FOOTER SUSTAINDEX --- */
         .academic-header { background-color: #003366; color: white; padding: 15px 0; border-bottom: 4px solid #cc0000; }
         .academic-header a { color: white; text-decoration: none; }
