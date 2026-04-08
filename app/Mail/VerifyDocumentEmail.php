@@ -20,7 +20,9 @@ class VerifyDocumentEmail extends Mailable
 
     public function build()
     {
-        return $this->subject('Action Required: Verify Your Document Submission - DocuSearch')
+        return $this->subject('Action Required: Verify Your Document Submission - Sustaindex')
+                    ->from('admin@sustaindex.org', 'Sustaindex')
+                    ->to($this->document->email)
                     ->view('emails.verify'); // Mengarah ke file tampilan email
     }
 }

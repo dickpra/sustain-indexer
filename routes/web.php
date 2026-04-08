@@ -30,6 +30,14 @@ Route::get('/submit', function () {
 });
 
 // (Ini route yang sudah kamu buat sebelumnya)
-Route::post('/submit-index', [DocumentController::class, 'store']);
+Route::post('/submit-index', [App\Http\Controllers\DocumentController::class, 'store'])
+    ->middleware('throttle:3,1');
+
+// Halaman URL Tanda Terima (Bisa di-bookmark / masuk history)
+Route::get('/receipt/{id}', [App\Http\Controllers\DocumentController::class, 'receipt']);
+
+// API untuk proses Kirim Ulang Email (Maks 3x per menit)
+Route::post('/resend-email', [App\Http\Controllers\DocumentController::class, 'resendEmail'])
+    ->middleware('throttle:3,1');
 
 

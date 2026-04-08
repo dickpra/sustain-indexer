@@ -277,14 +277,9 @@
         .then(response => response.json().then(data => ({ status: response.status, body: data })))
         .then(res => {
             if (res.status === 200) {
-                // Sembunyikan form penuh, Munculkan Receipt (Step 3)
-                form.classList.add('d-none');
-                step3.classList.remove('d-none');
-                
-                document.getElementById('receiptId').innerText = res.body.confirmation_id;
-                document.getElementById('receiptEmail').innerText = formData.get('submitter_email');
-                
-                window.scrollTo(0,0);
+                // REDIRECT OTOMATIS KE URL RECEIPT!
+                // Ini akan tersimpan di history browser
+                window.location.href = '/receipt/' + res.body.confirmation_id;
             } else {
                 // Balik ke Step 1 dan Munculkan Error
                 step2.classList.add('d-none');

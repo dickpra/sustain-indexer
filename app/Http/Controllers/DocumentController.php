@@ -10,18 +10,18 @@ use Illuminate\Support\Str; // Tambahkan ini untuk bikin random string
 use Illuminate\Support\Facades\Mail;
 use App\Mail\VerifyDocumentEmail;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Facades\DB;
 
 class DocumentController extends Controller
 {
     // Fungsi menerima data dari form
     public function store(Request $request)
     {
-        // 1. Validasi Input Dasar (Perhatikan 'authors' sekarang wajib array)
+        // 1. Validasi Input
         $validated = $request->validate([
             'title' => 'required|string',
-            'authors' => 'required|array|min:1', // Harus berupa array, minimal 1 author
-            'authors.*' => 'required|string', // Isi dari tiap author harus string
+            'authors' => 'required|array|min:1', 
+            'authors.*' => 'required|string', 
             'abstract' => 'required|string',
             'pdf_file' => 'required|mimes:pdf|max:102400',
             'submitter_email' => 'required|email',
@@ -29,7 +29,6 @@ class DocumentController extends Controller
             'submitter_last_name' => 'required|string',
         ]);
 
-        // 2. Simpan & Ekstrak PDF
         // 2. Simpan & Ekstrak PDF
         $path = $request->file('pdf_file')->store('temp');
         $fullPath = storage_path('app/' . $path);
@@ -39,7 +38,6 @@ class DocumentController extends Controller
         $rawText = $pdf->getText();
 
         // 3. PEMBERSIHAN EKSTREM
-        // Hanya menyisakan huruf kecil dan angka (hapus semua spasi, enter, dan tanda baca)
         $ultraCleanPdfText = preg_replace('/[^a-z0-9]/', '', strtolower($rawText));
         $ultraCleanInputTitle = preg_replace('/[^a-z0-9]/', '', strtolower($request->title));
 
@@ -53,7 +51,6 @@ class DocumentController extends Controller
 
         // 5. DUAL VALIDATION: Cek SEMUA Author
         foreach ($request->authors as $author) {
-            // Bersihkan nama author secara ekstrem juga
             $ultraCleanAuthor = preg_replace('/[^a-z0-9]/', '', strtolower($author));
             
             if (!str_contains($ultraCleanPdfText, $ultraCleanAuthor)) {
@@ -64,20 +61,20 @@ class DocumentController extends Controller
             }
         }
 
-        // 6. Ekstraksi DOI (Pakai $rawText karena DOI butuh tanda baca / dan .)
+        // 6. Ekstraksi DOI
         $doi = null;
         $doiPattern = '/10\.\d{4,9}\/[-._;()\/:A-Z0-9]+/i';
         if (preg_match($doiPattern, $rawText, $matches)) {
             $doi = 'https://doi.org/' . $matches[0];
         }
 
-        // 6. Generate ID & Simpan Data
+        // 7. Siapkan Data
         $docNumber = 'IDX-' . rand(100000, 999999);
-        $token = Str::random(40);
+        $token = \Illuminate\Support\Str::random(40);
 
         $documentData = array_merge($validated, [
             'document_number' => $docNumber,
-            'authors' => $request->authors, // Laravel otomatis mengubah array ini jadi JSON karena model $casts
+            'authors' => $request->authors, 
             'doi' => $doi,
             'verification_token' => $token,
             'document_type' => $request->document_type,
@@ -85,17 +82,51 @@ class DocumentController extends Controller
             'pages' => $request->pages,
             'reference_count' => $request->reference_count,
         ]);
-        
-        $document = Document::create($documentData);
 
-        // 7. Kirim Email & Hapus File
-        Mail::to($request->submitter_email)->send(new VerifyDocumentEmail($document));
-        Storage::delete($path);
+        // =========================================================
+        // 8. TRANSAKSI DATABASE (ANTI-GAGAL)
+        // =========================================================
+        DB::beginTransaction();
 
-        return response()->json([
-            'status' => 'success',
-            'confirmation_id' => $docNumber
-        ]);
+        try {
+            // A. Coba simpan ke Database
+            $document = Document::create($documentData);
+
+            // B. Coba kirim Email
+            // CARA RAHASIA: AFTER RESPONSE (Tanpa Worker, Tapi Layar Cepat)
+            dispatch(function () use ($document, $request) {
+                \Illuminate\Support\Facades\Mail::to($request->submitter_email)
+                    ->send(new \App\Mail\VerifyDocumentEmail($document));
+            })->afterResponse();
+
+            // C. Jika A dan B sukses, resmikan data masuk ke Database!
+            DB::commit();
+
+            // D. Buang sampah PDF
+            Storage::delete($path);
+
+            return response()->json([
+                'status' => 'success',
+                'confirmation_id' => $docNumber
+            ], 200);
+
+        } catch (\Exception $e) {
+            // JIKA ADA ERROR (Misal SMTP mati, internet putus, dll)
+            
+            // 1. Batalkan/Tarik kembali data dari database!
+            DB::rollBack();
+
+            // 2. Tetap buang sampah PDF supaya hosting tidak penuh
+            Storage::delete($path);
+
+            // 3. Catat error aslinya di file log supaya programmer tahu
+            Log::error('SustainDex Submit Error: ' . $e->getMessage());
+
+            // 4. Kasih tahu user kalau sistem sedang gangguan
+            return response()->json([
+                'error' => 'Submission failed due to a system error. Please try again later or contact support if the issue persists.'
+            ], 500);
+        }
     }
 
     // Fungsi Baru: Saat user klik link di email
@@ -105,7 +136,7 @@ class DocumentController extends Controller
         $document = Document::where('verification_token', $token)->first();
 
         if (!$document) {
-            return "Link verifikasi tidak valid atau sudah kedaluwarsa.";
+            return "Verification link is invalid or has expired.";
         }
 
         // Kalau ketemu, ubah jadi verified dan hapus tokennya biar gak dipakai 2 kali
@@ -122,13 +153,13 @@ class DocumentController extends Controller
     {
         // Hitung jumlah dokumen per tipe (hanya yang sudah verified)
         $docTypes = Document::where('is_verified', true)
-                        ->select('document_type', \DB::raw('count(*) as total'))
+                        ->select('document_type', DB::raw('count(*) as total'))
                         ->groupBy('document_type')
                         ->get();
 
         // Hitung jumlah dokumen per tahun publikasi
         $pubYears = Document::where('is_verified', true)
-                        ->select('pub_year', \DB::raw('count(*) as total'))
+                        ->select('pub_year', DB::raw('count(*) as total'))
                         ->groupBy('pub_year')
                         ->orderBy('pub_year', 'desc')
                         ->get();
@@ -169,5 +200,38 @@ class DocumentController extends Controller
         $authors = is_array($document->authors) ? $document->authors : json_decode($document->authors, true);
 
         return view('show', compact('document', 'authors'));
+    }
+
+    // Fungsi Menampilkan Halaman Receipt
+    public function receipt($id)
+    {
+        // Cari dokumen berdasarkan ID. Jika tidak ada, otomatis muncul error 404
+        $document = Document::where('document_number', $id)->firstOrFail();
+        
+        return view('receipt', compact('document'));
+    }
+
+    // Fungsi Mengirim Ulang Email
+    public function resendEmail(Request $request)
+    {
+        $request->validate(['document_number' => 'required|string']);
+        
+        $document = Document::where('document_number', $request->document_number)->first();
+
+        if (!$document) {
+            return response()->json(['error' => 'Document not found.'], 404);
+        }
+
+        if ($document->is_verified) {
+            return response()->json(['error' => 'This document has already been verified and is available in the search system.'], 400);
+        }
+
+        // Masukkan ulang tugas kirim email ke dalam antrean (Queue)
+        dispatch(function () use ($document) {
+            \Illuminate\Support\Facades\Mail::to($document->submitter_email)
+                ->send(new \App\Mail\VerifyDocumentEmail($document));
+        })->afterResponse();
+
+        return response()->json(['message' => 'Verification email has been resent successfully! Please check your inbox or spam folder.']);
     }
 }
