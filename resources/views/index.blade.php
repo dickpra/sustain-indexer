@@ -104,24 +104,34 @@
                 <div class="filter-header">Publication Type</div>
                 <ul class="filter-list">
                     @foreach($docTypes as $type)
-                        <li class="filter-item" data-filter="type" data-value="{{ $type->document_type }}">
+                        <li class="filter-item {{ $loop->iteration > 5 ? 'd-none extra-type' : '' }}" data-filter="type" data-value="{{ $type->document_type }}">
                             {{ $type->document_type ?: 'Unknown' }} <span class="filter-count">{{ $type->total }}</span>
                         </li>
                     @endforeach
                 </ul>
+                @if(count($docTypes) > 5)
+                    <div class="px-3 pb-2">
+                        <button class="btn btn-link btn-sm text-decoration-none p-0 toggle-more" data-target=".extra-type">+ Show More</button>
+                    </div>
+                @endif
             </div>
 
             <div class="filter-box">
                 <div class="filter-header">Publication Year</div>
                 <ul class="filter-list">
                     @foreach($pubYears as $year)
-                        <li class="filter-item" data-filter="year" data-value="{{ $year->pub_year }}">
+                        <li class="filter-item {{ $loop->iteration > 5 ? 'd-none extra-year' : '' }}" data-filter="year" data-value="{{ $year->pub_year }}">
                             {{ $year->pub_year ?: 'N/A' }} <span class="filter-count">{{ $year->total }}</span>
                         </li>
                     @endforeach
                 </ul>
+                @if(count($pubYears) > 5)
+                    <div class="px-3 pb-2">
+                        <button class="btn btn-link btn-sm text-decoration-none p-0 toggle-more" data-target=".extra-year">+ Show More</button>
+                    </div>
+                @endif
             </div>
-            
+
             <button id="btnResetFilter" class="btn btn-sm btn-outline-danger w-100 mt-2 d-none">Reset Filters</button>
         </div>
 
@@ -320,6 +330,37 @@
         timeoutId = setTimeout(() => {
             fetchResults(query);
         }, 400); 
+    });
+
+    // --- LOGIKA TOMBOL SHOW MORE / SHOW LESS ---
+    document.querySelectorAll('.toggle-more').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Ambil target class yang mau dimunculkan (misal: .extra-year)
+            const targetClass = this.getAttribute('data-target');
+            const hiddenItems = document.querySelectorAll(targetClass);
+            
+            // Cek apakah item pertama sedang tersembunyi
+            let isHidden = hiddenItems[0].classList.contains('d-none');
+            
+            if (isHidden) {
+                // Jika tersembunyi, BUKA semua!
+                hiddenItems.forEach(item => item.classList.remove('d-none'));
+                this.innerText = '- Show Less';
+            } else {
+                // Jika sedang terbuka, SEMBUNYIKAN lagi, dan batalkan pilihan filter kalau ada yang aktif di dalam yang disembunyikan
+                hiddenItems.forEach(item => {
+                    item.classList.add('d-none');
+                    // Cegah bug: kalau filter yang disembunyikan lagi aktif, matikan filternya otomatis
+                    if(item.classList.contains('active')) {
+                        item.classList.remove('active');
+                        activeFilters[item.getAttribute('data-filter')] = '';
+                        btnResetFilter.classList.add('d-none');
+                        fetchResults(searchInput.value); // Reload data
+                    }
+                });
+                this.innerText = '+ Show More';
+            }
+        });
     });
 </script>
 
