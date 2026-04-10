@@ -168,19 +168,34 @@ class DocumentController extends Controller
     }
 
     // 2. Fungsi Pencarian API (Update)
+    // Fungsi Pencarian API (Update dengan Filter)
     public function search(Request $request)
     {
         $q = $request->query('q');
+        $type = $request->query('type'); // Menangkap klik Tipe dari UI
+        $year = $request->query('year'); // Menangkap klik Tahun dari UI
         
         // Hanya cari dokumen yang is_verified = true
         $query = Document::where('is_verified', true);
 
+        // Jika user mengetik di kotak pencarian
         if ($q) {
             $query->where(function($queryBuilder) use ($q) {
                 $queryBuilder->where('title', 'like', "%$q%")
                              ->orWhere('abstract', 'like', "%$q%")
-                             ->orWhere('authors', 'like', "%$q%");
+                             ->orWhere('authors', 'like', "%$q%")
+                             ->orWhere('document_number', 'like', "%$q%"); // Bisa cari pakai ID
             });
+        }
+
+        // Jika user mengklik filter Tipe Dokumen di kiri
+        if ($type) {
+            $query->where('document_type', $type);
+        }
+
+        // Jika user mengklik filter Tahun Publikasi di kiri
+        if ($year) {
+            $query->where('pub_year', $year);
         }
 
         // Tampilkan yang terbaru

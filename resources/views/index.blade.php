@@ -6,6 +6,14 @@
     <title>SustainDex - Academic Indexing System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        /* Efek saat filter diklik (aktif) */
+        .filter-list li.active { 
+            background-color: #e8f0fe; 
+            font-weight: bold; 
+            color: #003366; 
+            border-left: 4px solid #cc0000; 
+        }
+        .filter-list li.active:hover { text-decoration: none; }
         /* ================= RESPONSIVE (MOBILE & TABLET) ================= */
         @media (max-width: 768px) {
             /* Mengecilkan jarak kotak putih utama */
@@ -96,11 +104,10 @@
                 <div class="filter-header">Publication Type</div>
                 <ul class="filter-list">
                     @foreach($docTypes as $type)
-                        <li>{{ $type->document_type ?: 'Unknown' }} <span class="filter-count">{{ $type->total }}</span></li>
+                        <li class="filter-item" data-filter="type" data-value="{{ $type->document_type }}">
+                            {{ $type->document_type ?: 'Unknown' }} <span class="filter-count">{{ $type->total }}</span>
+                        </li>
                     @endforeach
-                    @if($docTypes->isEmpty())
-                        <li class="text-muted">No data available</li>
-                    @endif
                 </ul>
             </div>
 
@@ -108,13 +115,14 @@
                 <div class="filter-header">Publication Year</div>
                 <ul class="filter-list">
                     @foreach($pubYears as $year)
-                        <li>{{ $year->pub_year ?: 'N/A' }} <span class="filter-count">{{ $year->total }}</span></li>
+                        <li class="filter-item" data-filter="year" data-value="{{ $year->pub_year }}">
+                            {{ $year->pub_year ?: 'N/A' }} <span class="filter-count">{{ $year->total }}</span>
+                        </li>
                     @endforeach
-                    @if($pubYears->isEmpty())
-                        <li class="text-muted">No data available</li>
-                    @endif
                 </ul>
             </div>
+            
+            <button id="btnResetFilter" class="btn btn-sm btn-outline-danger w-100 mt-2 d-none">Reset Filters</button>
         </div>
 
         <div class="col-md-9">
@@ -124,7 +132,7 @@
                 <button class="btn btn-primary px-4" type="button">Search</button>
             </div>
 
-            <p class="text-muted small" id="resultCount">Menampilkan dokumen terbaru...</p>
+            <p class="text-muted small" id="resultCount">Showing latest documents...</p>
 
             <div id="resultsContainer">
                 </div>
@@ -137,46 +145,55 @@
     const searchInput = document.getElementById('searchInput');
     const resultsContainer = document.getElementById('resultsContainer');
     const resultCount = document.getElementById('resultCount');
+    const btnResetFilter = document.getElementById('btnResetFilter');
     let timeoutId;
+    
+    // Simpan filter yang sedang aktif
+    let activeFilters = { type: '', year: '' };
 
-    // Fungsi untuk memuat data (Bisa kosong untuk load awal, atau ada isi saat ngetik)
+    // Fungsi untuk memuat data (Dengan Pencarian & Filter)
     function fetchResults(query = '') {
         resultsContainer.innerHTML = '<div class="text-center my-5"><span class="spinner-border text-primary"></span><p class="text-muted mt-2">Searching database...</p></div>';
 
-        fetch(`/search?q=${encodeURIComponent(query)}`)
+        // Susun URL dengan parameter pencarian & filter
+        let url = `/search?q=${encodeURIComponent(query)}`;
+        if (activeFilters.type) url += `&type=${encodeURIComponent(activeFilters.type)}`;
+        if (activeFilters.year) url += `&year=${encodeURIComponent(activeFilters.year)}`;
+
+        fetch(url)
             .then(response => response.json())
             .then(data => {
                 resultsContainer.innerHTML = ''; 
-                resultCount.innerText = query ? `Menampilkan ${data.length} hasil untuk "${query}"` : `Menampilkan ${data.length} dokumen terbaru`;
+                
+                // Bikin teks pemberitahuan yang dinamis
+                let filterText = '';
+                if(activeFilters.type) filterText += ` | Type: ${activeFilters.type}`;
+                if(activeFilters.year) filterText += ` | Year: ${activeFilters.year}`;
+                
+                resultCount.innerText = query 
+                    ? `Menampilkan ${data.length} hasil untuk "${query}" ${filterText}` 
+                    : `Menampilkan ${data.length} dokumen ${filterText}`;
 
                 if (data.length === 0) {
                     resultsContainer.innerHTML = '<div class="alert alert-light border text-center py-5"><b>No results found.</b><br>Try adjusting your search terms or filters.</div>';
                     return;
                 }
 
-                // Looping hasil
+                // Render Card (Sama seperti sebelumnya)
                 data.forEach(item => {
-                    // Gabungkan array nama author jadi string pakai koma
                     let authorsArray = item.authors;
-                    if(typeof authorsArray === 'string') {
-                        authorsArray = JSON.parse(authorsArray); // Parse kalau formatnya string JSON
-                    }
+                    if(typeof authorsArray === 'string') authorsArray = JSON.parse(authorsArray);
                     const authorText = Array.isArray(authorsArray) ? authorsArray.join('; ') : 'Unknown Author';
-
-                    // Potong abstrak
                     const shortAbstract = item.abstract.length > 300 ? item.abstract.substring(0, 300) + '...' : item.abstract;
-                    
-                    // Cek DOI
-                    const doiHtml = item.doi ? `| <a href="${item.doi}" target="_blank" class="text-success text-decoration-none">Direct Link (DOI)</a>` : '';
+                    const doiHtml = item.doi ? `| <a href="${item.doi}" target="_blank" class="text-success text-decoration-none fw-bold">DOI</a>` : '';
 
-                    // Bikin HTML Card (Bentuk list jurnal asli)
                     const card = `
                         <div class="result-card">
                             <a href="/document/${item.document_number}" class="doc-title">${item.title}</a>
                             <div class="doc-authors mt-1">${authorText}</div>
                             <div class="doc-abstract">${shortAbstract}</div>
                             <div class="doc-meta">
-                                <span class="badge badge-type rounded-pill px-2 py-1">${item.document_type || 'Journal'}</span>
+                                <span class="badge bg-secondary rounded-pill">${item.document_type || 'Journal'}</span>
                                 <span class="ms-2">Pub Year: ${item.pub_year || 'N/A'}</span>
                                 <span class="ms-2">| ID: ${item.document_number}</span>
                                 <span class="ms-2">${doiHtml}</span>
@@ -191,24 +208,57 @@
             });
     }
 
-    // Load data otomatis saat halaman pertama dibuka
-    // Tangkap kata kunci dari URL (jika ada dari halaman depan)
+    // --- LOGIKA KLIK FILTER ---
+    document.querySelectorAll('.filter-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const filterType = this.getAttribute('data-filter'); // 'type' atau 'year'
+            const filterValue = this.getAttribute('data-value');
+
+            // Kalau diklik dua kali (Toggle Off)
+            if (this.classList.contains('active')) {
+                this.classList.remove('active');
+                activeFilters[filterType] = '';
+            } else {
+                // Matikan dulu class 'active' di kategori yang sama
+                document.querySelectorAll(`.filter-item[data-filter="${filterType}"]`).forEach(el => el.classList.remove('active'));
+                
+                // Aktifkan yang baru diklik
+                this.classList.add('active');
+                activeFilters[filterType] = filterValue;
+            }
+
+            // Tampilkan/Sembunyikan tombol Reset
+            if (activeFilters.type || activeFilters.year) {
+                btnResetFilter.classList.remove('d-none');
+            } else {
+                btnResetFilter.classList.add('d-none');
+            }
+
+            // Panggil data ulang
+            fetchResults(searchInput.value);
+        });
+    });
+
+    // --- TOMBOL RESET ---
+    btnResetFilter.addEventListener('click', function() {
+        document.querySelectorAll('.filter-item').forEach(el => el.classList.remove('active'));
+        activeFilters = { type: '', year: '' };
+        this.classList.add('d-none');
+        fetchResults(searchInput.value);
+    });
+
+    // --- LOAD AWAL & KETIKAN PENCARIAN ---
     const urlParams = new URLSearchParams(window.location.search);
     const initialQuery = urlParams.get('q') || '';
-    
-    // Masukkan kata kunci ke dalam input form di atas supaya user tahu dia lagi nyari apa
     searchInput.value = initialQuery;
-
-    // Load data otomatis berdasarkan kata kunci dari halaman depan
     fetchResults(initialQuery);
 
-    // Load data saat ngetik (Debouncing)
     searchInput.addEventListener('input', function() {
         clearTimeout(timeoutId);
         const query = this.value;
         timeoutId = setTimeout(() => {
             fetchResults(query);
-        }, 400); // Tunggu 400ms setelah selesai ngetik
+        }, 400); 
     });
 </script>
 
