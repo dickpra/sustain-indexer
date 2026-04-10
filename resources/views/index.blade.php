@@ -136,6 +136,10 @@
 
             <div id="resultsContainer">
                 </div>
+            <nav aria-label="Search results pages" class="mt-4">
+                <ul id="paginationContainer" class="pagination justify-content-center">
+                    </ul>
+            </nav>
 
         </div>
     </div>
@@ -151,35 +155,41 @@
     // Simpan filter yang sedang aktif
     let activeFilters = { type: '', year: '' };
 
-    // Fungsi untuk memuat data (Dengan Pencarian & Filter)
-    function fetchResults(query = '') {
-        resultsContainer.innerHTML = '<div class="text-center my-5"><span class="spinner-border text-primary"></span><p class="text-muted mt-2">Searching database...</p></div>';
+    const paginationContainer = document.getElementById('paginationContainer');
 
-        // Susun URL dengan parameter pencarian & filter
-        let url = `/search?q=${encodeURIComponent(query)}`;
+    // Tambahkan parameter `page` dengan default 1
+    function fetchResults(query = '', page = 1) {
+        resultsContainer.innerHTML = '<div class="text-center my-5"><span class="spinner-border text-primary"></span><p class="text-muted mt-2">Searching database...</p></div>';
+        paginationContainer.innerHTML = ''; // Kosongkan tombol paginasi saat loading
+
+        // Masukkan parameter page ke dalam URL
+        let url = `/search?q=${encodeURIComponent(query)}&page=${page}`;
         if (activeFilters.type) url += `&type=${encodeURIComponent(activeFilters.type)}`;
         if (activeFilters.year) url += `&year=${encodeURIComponent(activeFilters.year)}`;
 
         fetch(url)
             .then(response => response.json())
-            .then(data => {
+            .then(paginator => {
                 resultsContainer.innerHTML = ''; 
                 
-                // Bikin teks pemberitahuan yang dinamis
+                // Karena pakai paginate(), datanya sekarang ada di dalam paginator.data
+                const data = paginator.data; 
+                
                 let filterText = '';
                 if(activeFilters.type) filterText += ` | Type: ${activeFilters.type}`;
                 if(activeFilters.year) filterText += ` | Year: ${activeFilters.year}`;
                 
+                // Ubah teks jumlah hasil pakai paginator.total
                 resultCount.innerText = query 
-                    ? `Menampilkan ${data.length} hasil untuk "${query}" ${filterText}` 
-                    : `Menampilkan ${data.length} dokumen ${filterText}`;
+                    ? `Showing ${data.length} of ${paginator.total} results for "${query}" ${filterText}`
+                    : `Showing ${data.length} of ${paginator.total} documents ${filterText}`;
 
                 if (data.length === 0) {
                     resultsContainer.innerHTML = '<div class="alert alert-light border text-center py-5"><b>No results found.</b><br>Try adjusting your search terms or filters.</div>';
                     return;
                 }
 
-                // Render Card (Sama seperti sebelumnya)
+                // Render Card Jurnal
                 data.forEach(item => {
                     let authorsArray = item.authors;
                     if(typeof authorsArray === 'string') authorsArray = JSON.parse(authorsArray);
@@ -202,10 +212,61 @@
                     `;
                     resultsContainer.insertAdjacentHTML('beforeend', card);
                 });
+
+                // Panggil fungsi untuk menggambar tombol Paginasi
+                renderPagination(paginator);
             })
             .catch(error => {
-                resultsContainer.innerHTML = '<div class="text-danger">Terjadi kesalahan saat memuat data.</div>';
+                resultsContainer.innerHTML = '<div class="text-danger">An error occurred while loading data.</div>';
             });
+    }
+
+    // Fungsi Menggambar Tombol Paginasi
+    function renderPagination(paginator) {
+        if (paginator.last_page <= 1) return; // Kalau cuma 1 halaman, gak usah tampilkan tombol
+
+        let html = '';
+        const currentPage = paginator.current_page;
+        const lastPage = paginator.last_page;
+
+        // Tombol Previous
+        html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-page="${currentPage - 1}">&laquo; Prev</a>
+                 </li>`;
+
+        // Logika sederhana untuk menampilkan tombol angka (batas maksimal 5 tombol)
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(lastPage, currentPage + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" data-page="${i}">${i}</a>
+                     </li>`;
+        }
+
+        // Tombol Next
+        html += `<li class="page-item ${currentPage === lastPage ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-page="${currentPage + 1}">Next &raquo;</a>
+                 </li>`;
+
+        paginationContainer.innerHTML = html;
+
+        // Pasang Event Listener saat tombol diklik
+        document.querySelectorAll('.page-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                let parentLi = this.parentElement;
+                
+                // Kalau tombol di-disable atau sedang aktif, abaikan kliknya
+                if (parentLi.classList.contains('disabled') || parentLi.classList.contains('active')) return;
+                
+                let targetPage = this.getAttribute('data-page');
+                
+                // Panggil ulang data dengan halaman yang baru, dan scroll ke atas otomatis!
+                fetchResults(searchInput.value, targetPage);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
     }
 
     // --- LOGIKA KLIK FILTER ---

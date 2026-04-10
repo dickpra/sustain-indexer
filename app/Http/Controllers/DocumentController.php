@@ -199,7 +199,8 @@ class DocumentController extends Controller
         }
 
         // Tampilkan yang terbaru
-        $results = $query->latest()->get();
+        // CARA BARU (Membatasi 10 data per halaman)
+        $results = $query->latest()->paginate(10);
         return response()->json($results);
     }
 
