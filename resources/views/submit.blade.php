@@ -250,7 +250,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="card-title mb-0 text-primary">Author ${authorIndex + 1}</h5>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAuthor(${authorIndex})">Remove</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-remove-author">Remove</button>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -288,8 +288,11 @@
     });
 
     authorContainer.addEventListener('click', function(e) {
-        if(e.target.classList.contains('remove-author')) {
-            e.target.closest('.author-block').remove();
+        // Pakai .closest() agar kalau klik kena icon/teks di dalem tombol tetep jalan
+        let removeBtn = e.target.closest('.btn-remove-author');
+        
+        if(removeBtn) {
+            removeBtn.closest('.author-card').remove();
         }
     });
 
