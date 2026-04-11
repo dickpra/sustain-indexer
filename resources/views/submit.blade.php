@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Submit Document - SustainDex</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     <style>
         /* TEMA AKADEMIK JURNAL */
         body { background-color: #f4f4f4; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; }
@@ -13,30 +15,30 @@
         .academic-title { font-family: 'Georgia', serif; font-size: 1.8rem; font-weight: normal; margin: 0; }
         
         .main-container { background: white; padding: 40px; border: 1px solid #ccc; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 30px; margin-bottom: 50px; }
-        
         .section-title { font-family: 'Georgia', serif; font-size: 1.3em; color: #003366; border-bottom: 1px solid #003366; padding-bottom: 8px; margin-bottom: 20px; margin-top: 30px; }
+        
         .form-label { font-weight: bold; color: #222; font-size: 0.95em; }
         .form-control, .form-select { border-radius: 0; border: 1px solid #999; }
         .form-control:focus { border-color: #003366; box-shadow: none; }
         
         .btn-academic { background-color: #003366; color: white; border-radius: 0; padding: 10px 25px; font-weight: bold; border: 1px solid #002244; }
         .btn-academic:hover { background-color: #002244; color: white; }
-        .btn-secondary-academic { background-color: #e0e0e0; color: #333; border-radius: 0; border: 1px solid #ccc; font-weight: bold;}
-        .btn-secondary-academic:hover { background-color: #d0d0d0; }
-
-        .author-row { display: flex; gap: 10px; margin-bottom: 10px; }
         
-        /* Tabel Review */
-        .review-table th { background-color: #f9f9f9; width: 30%; font-weight: bold; color: #444; }
-        .review-table td, .review-table th { border: 1px solid #ddd; padding: 12px; }
+        /* Desain Blok Author */
+        .author-block { background-color: #f8f9fa; border: 1px solid #e0e0e0; padding: 20px; margin-bottom: 15px; position: relative; }
+        .author-badge { position: absolute; top: -12px; left: 15px; background: #cc0000; color: white; padding: 2px 15px; font-size: 0.85em; font-weight: bold; }
+        .remove-author { position: absolute; top: 10px; right: 15px; }
+        
+        /* Map Container */
+        #map { height: 300px; width: 100%; border: 1px solid #ccc; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="academic-header">
     <div class="container d-flex justify-content-between align-items-center">
-        <h1 class="academic-title"><a href="/">📚 Sustain Index</a></h1>
-        <a href="/" class="btn btn-sm btn-outline-light rounded-0">Cancel / Back to Search</a>
+        <h1 class="academic-title"><a href="/">📚 SustainDex Index</a></h1>
+        <a href="/" class="btn btn-sm btn-outline-light rounded-0">Cancel</a>
     </div>
 </div>
 
@@ -44,72 +46,102 @@
     <div class="row justify-content-center">
         <div class="col-lg-10 main-container">
             
-            <div id="errorAlert" class="alert alert-danger d-none fw-bold rounded-0" role="alert"></div>
-
             <form id="submitForm" enctype="multipart/form-data">
                 @csrf
                 <div id="step1_form">
                     <h2 style="font-family: 'Georgia', serif; color: #003366; margin-bottom: 5px;">Submit a New Material</h2>
-                    <p class="text-muted mb-4">Please fill out the form below carefully. You will have a chance to review your entries before final submission.</p>
+                    <p class="text-muted mb-4">Please fill out the form carefully. Authors will be deduplicated based on their email addresses.</p>
 
-                    <div class="section-title">Material Information</div>
+                    <div class="section-title">1. Material Information</div>
                     <div class="mb-4">
                         <label class="form-label">Title of the Submitted Material <span class="text-danger">*</span></label>
                         <input type="text" name="title" class="form-control" placeholder="Enter the title exactly as it appears..." required>
                         <small class="text-muted">Including capitalization.</small>
                     </div>
-                    
-                    <div class="mb-4">
-                        <label class="form-label">Author(s) <span class="text-danger">*</span></label>
-                        <p class="text-muted small mb-2">Enter the authors in the order that they appear in the source.</p>
-                        <div id="authorContainer">
-                            <div class="author-row">
-                                <input type="text" name="authors[]" class="form-control" placeholder="Author 1 Name" required>
-                                <button type="button" class="btn btn-secondary-academic disabled" style="width: 45px;">-</button>
-                            </div>
-                        </div>
-                        <button type="button" id="btnAddAuthor" class="btn btn-sm btn-secondary-academic mt-1">+ Add another author</button>
-                    </div>
 
                     <div class="mb-4">
                         <label class="form-label">Abstract <span class="text-danger">*</span></label>
-                        <textarea name="abstract" class="form-control" rows="6" required></textarea>
+                        <textarea name="abstract" class="form-control" rows="5" required></textarea>
                     </div>
 
-                    <div class="section-title">Publication Details</div>
-                    <div class="row">
-                        <div class="col-md-6 mb-4">
+                    <div class="mb-4">
+                        <label class="form-label">Keywords</label>
+                        <input type="text" name="keywords" class="form-control" placeholder="e.g., global warming, carbon footprint, sustainability">
+                        <small class="text-muted">Separate multiple keywords with commas.</small>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">Document Type <span class="text-danger">*</span></label>
                             <select name="document_type" class="form-select" required>
                                 <option value="" disabled selected>-- select one --</option>
                                 <option value="Book">Book</option>
-                                <option value="Conference Paper">Conference Paper</option>
                                 <option value="Journal Article">Journal Article</option>
-                                <option value="Report">Report</option>
+                                <option value="Conference Paper">Conference Paper</option>
                             </select>
                         </div>
                         <div class="col-md-6 mb-4">
                             <label class="form-label">Publication Year</label>
                             <input type="number" name="pub_year" class="form-control" placeholder="e.g., 2026">
                         </div>
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label">Pages</label>
-                            <input type="number" name="pages" class="form-control">
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Total Pages</label>
+                            <input type="number" name="pages" class="form-control" placeholder="e.g., 15">
                         </div>
-                        <div class="col-md-6 mb-4">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">Reference Count</label>
-                            <input type="number" name="reference_count" class="form-control">
+                            <input type="number" name="reference_count" class="form-control" placeholder="e.g., 45">
+                        </div>
+                    </div> <div class="section-title">2. Authors & Affiliations</div>
+                    <p class="text-muted small mb-3">Email addresses are strictly required to accurately connect documents to the correct author profiles.</p>
+                    
+                    <div id="authorContainer">
+                        <div class="author-block">
+                            <div class="author-badge">Author 1 (Primary)</div>
+                            <div class="row mt-2">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small">Full Name <span class="text-danger">*</span></label>
+                                    <input type="text" name="authors[0][name]" class="form-control" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small">Email Address <span class="text-danger">*</span></label>
+                                    <input type="email" name="authors[0][email]" class="form-control" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small">Country</label>
+                                    <input type="text" name="authors[0][country]" class="form-control" placeholder="e.g., Indonesia">
+                                </div>
+                                <div class="col-md-6 mb-3 position-relative">
+                                    <label class="form-label small">Institution / Affiliation <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="text" name="authors[0][institution]" class="form-control inst-input" placeholder="Search institution..." autocomplete="off" required>
+                                        <button class="btn btn-outline-secondary btn-add-inst" type="button" data-bs-toggle="modal" data-bs-target="#mapModal" data-target-input="0">
+                                            🗺️ Add New
+                                        </button>
+                                    </div>
+                                    <ul class="list-group position-absolute w-100 d-none inst-suggestions shadow" style="z-index: 1050; max-height: 200px; overflow-y: auto;"></ul>
+                                    
+                                    <small class="text-muted" style="font-size: 11px;">Not in our database? Click "Add New" to map it.</small>
+                                    <input type="hidden" name="authors[0][lat]" id="lat_0">
+                                    <input type="hidden" name="authors[0][lng]" id="lng_0">
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    <button type="button" id="btnAddAuthor" class="btn btn-sm btn-outline-dark mt-1 fw-bold">+ Add Co-Author</button>
 
-                    <div class="section-title">Document Upload</div>
+                    <div class="section-title mt-5">3. Document Upload</div>
                     <div class="mb-4 p-3" style="background-color: #f9f9f9; border: 1px dashed #999;">
                         <label class="form-label">Please attach a PDF of your submission <span class="text-danger">*</span></label>
                         <input type="file" name="pdf_file" id="pdfFileInput" class="form-control mb-2" accept=".pdf" required>
                         <small class="text-danger fw-bold">Note: The system will scan this file to verify the exact Title and Author names provided above.</small>
                     </div>
 
-                    <div class="section-title">Your Contact Details</div>
+                    <div class="section-title mt-2">Contact Details (Submitter)</div>
+                    <p class="text-muted small mb-3">The verification email will be sent to this address. The submitter does not have to be an author.</p>
                     <div class="row mb-5">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">First name <span class="text-danger">*</span></label>
@@ -126,179 +158,389 @@
                         </div>
                     </div>
 
-                    <div class="text-end border-top pt-4">
-                        <button type="button" class="btn btn-academic btn-lg" id="btnGoToReview">Continue to Review &rarr;</button>
+                    <div class="text-end border-top pt-4 mt-5">
+                        <button type="button" id="btnReview" class="btn btn-academic btn-lg">Review Submission &rarr;</button>
                     </div>
                 </div>
-                
                 <div id="step2_review" class="d-none">
-                    <h2 style="font-family: 'Georgia', serif; color: #003366; margin-bottom: 15px;">Review Submission</h2>
-                    
-                    <div class="alert alert-warning rounded-0 border-0" style="background-color: #fff8e1; color: #856404; border-left: 4px solid #ffeeba !important;">
-                        Please review your submission details listed below. If you need to modify any details, please use the <b>Edit</b> button to go back to the submission form. Once you have confirmed that your submission details are correct, you must click the <b>Final Submit</b> button to complete your submission.
+                    <h2 style="font-family: 'Georgia', serif; color: #003366; margin-bottom: 5px;">Review Your Submission</h2>
+                    <div class="alert alert-warning rounded-0 border-0 border-start border-4 border-warning mb-4 shadow-sm">
+                        <strong>⚠️ Almost done!</strong> Please review your data carefully. Once submitted, changes cannot be made automatically.
                     </div>
-                <div class="table-responsive border mb-4">
-                    <table class="table review-table w-100 mt-4">
-                        <tbody>
-                            <tr><th>Title</th><td id="rev_title"></td></tr>
-                            <tr><th>Author(s)</th><td id="rev_authors"></td></tr>
-                            <tr><th>Abstract</th><td id="rev_abstract" style="text-align: justify;"></td></tr>
-                            <tr><th>Document Type</th><td id="rev_type"></td></tr>
-                            <tr><th>Publication Year</th><td id="rev_year"></td></tr>
-                            <tr><th>Pages</th><td id="rev_pages"></td></tr>
-                            <tr><th>Reference Count</th><td id="rev_ref"></td></tr>
-                            <tr><th>Attached File</th><td id="rev_file" class="text-primary fw-bold"></td></tr>
-                            <tr><th>Submitter Name</th><td id="rev_name"></td></tr>
-                            <tr><th>Submitter Email</th><td id="rev_email"></td></tr>
-                        </tbody>
-                    </table>
-                </div>
 
-                    <div class="d-flex justify-content-between mt-5 pt-3 border-top">
-                        <button type="button" class="btn btn-secondary-academic btn-lg" id="btnBackToForm">&larr; Edit Details</button>
-                        <button type="submit" class="btn btn-academic btn-lg" id="btnFinalSubmit">Final Submit</button>
+                    <div class="table-responsive border mb-4 bg-light">
+                        <table class="table table-hover w-100 m-0">
+                            <tbody>
+                                <tr><th style="width: 25%; color:#003366;">Document Title</th><td id="rev_title" class="fw-bold"></td></tr>
+                                <tr><th style="color:#003366;">Abstract</th><td id="rev_abstract" style="text-align: justify; font-size: 0.9em;"></td></tr>
+                                <tr><th style="color:#003366;">Keywords</th><td id="rev_keywords"></td></tr>
+                                <tr><th style="color:#003366;">Type & Year</th><td id="rev_type_year"></td></tr>
+                                <tr><th style="color:#003366;">Pages & Refs</th><td id="rev_pages_refs"></td></tr>
+                                <tr><th style="color:#003366;">Authors & Affiliations</th><td id="rev_authors"></td></tr>
+                                <tr><th style="color:#cc0000;">Contact / Submitter</th><td id="rev_submitter" class="fw-bold text-danger"></td></tr>
+                                <tr><th style="color:#003366;">PDF File</th><td id="rev_file" class="text-primary font-monospace"></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-5">
+                        <button type="button" id="btnBackEdit" class="btn btn-outline-secondary btn-lg rounded-0 px-4">&larr; Back to Edit</button>
+                        <button type="button" id="btnSubmitFinal" class="btn btn-success btn-lg rounded-0 px-5 fw-bold shadow">Submit to Index &rarr;</button>
                     </div>
                 </div>
             </form>
-
-            <div id="step3_receipt" class="d-none text-center py-5">
-                <h2 style="font-family: 'Georgia', serif; color: #006600;">Submission Received Successfully</h2>
-                <div class="p-4 mt-4 mb-4" style="background-color: #f1f8f1; border: 1px solid #c3e6c3;">
-                    <p class="fs-5 mb-1">Your submission Confirmation ID is:</p>
-                    <p class="fs-3 fw-bold text-dark mb-0" id="receiptId"></p>
-                </div>
-                
-                <p class="fs-5 mt-4">
-                    An email confirming your submission details has been sent to <br>
-                    <strong id="receiptEmail" class="text-primary"></strong>
-                </p>
-                <div class="alert alert-info rounded-0 mt-3 d-inline-block text-start">
-                    <strong>Important Action Required:</strong><br>
-                    Please check your inbox (or spam folder) and click the verification link to officially publish your document.
-                </div>
-                
-                <div class="mt-5">
-                    <a href="/submit" class="btn btn-secondary-academic">Submit Another Document</a>
-                    <a href="/" class="btn btn-academic ms-2">Return to Homepage</a>
-                </div>
-            </div>
 
         </div>
     </div>
 </div>
 
+<div class="modal fade" id="mapModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content rounded-0">
+      <div class="modal-header bg-dark text-white rounded-0">
+        <h5 class="modal-title" style="font-family: 'Georgia', serif;">🗺️ Register New Institution</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info small rounded-0 border-0">
+            Please search your institution on the map and click to pinpoint its exact location.
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Institution Name <span class="text-danger">*</span></label>
+                <input type="text" id="newInstName" class="form-control" placeholder="e.g., Universitas Gadjah Mada">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Country</label>
+                <input type="text" id="newInstCountry" class="form-control" placeholder="e.g., Indonesia">
+            </div>
+        </div>
+
+        <label class="form-label fw-bold mt-2">Pinpoint Location</label>
+        <div id="map"></div>
+        <div class="text-muted small mt-1">Coordinates: <span id="coordDisplay">Not selected</span></div>
+        
+        <input type="hidden" id="newInstLat">
+        <input type="hidden" id="newInstLng">
+        <input type="hidden" id="activeAuthorIndex">
+
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-outline-secondary rounded-0" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-academic" id="btnSaveInstitution">Save & Select</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
 <script>
-    // --- LOGIC TAMBAH AUTHOR ---
+    // --- LOGIKA MULTIPLE AUTHORS ---
     const authorContainer = document.getElementById('authorContainer');
-    let authorCount = 1;
+    let authorIndex = 0;
 
     document.getElementById('btnAddAuthor').addEventListener('click', function() {
-        authorCount++;
-        const newRow = document.createElement('div');
-        newRow.className = 'author-row';
-        newRow.innerHTML = `
-            <input type="text" name="authors[]" class="form-control" placeholder="Author ${authorCount} Name" required>
-            <button type="button" class="btn btn-secondary-academic btn-remove-author" style="width: 45px;">X</button>
+        authorIndex++;
+        let html = `
+            <div class="card mb-3 author-card" id="author_${authorIndex}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0 text-primary">Author ${authorIndex + 1}</h5>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAuthor(${authorIndex})">Remove</button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" name="authors[${authorIndex}][name]" class="form-control" placeholder="e.g. Jane Smith" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" name="authors[${authorIndex}][email]" class="form-control" placeholder="e.g. jane@univ.edu" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small">Country</label>
+                            <input type="text" name="authors[${authorIndex}][country]" class="form-control" placeholder="e.g. United Kingdom">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3 position-relative">
+                            <label class="form-label small">Institution / Affiliation <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="text" name="authors[${authorIndex}][institution]" class="form-control inst-input" placeholder="Search institution..." autocomplete="off" required>
+                                <button class="btn btn-outline-secondary btn-add-inst" type="button" data-bs-toggle="modal" data-bs-target="#mapModal" data-target-input="${authorIndex}">
+                                    🗺️ Add New
+                                </button>
+                            </div>
+                            <ul class="list-group position-absolute w-100 d-none inst-suggestions shadow" style="z-index: 1050; max-height: 200px; overflow-y: auto;"></ul>
+                            
+                            <small class="text-muted" style="font-size: 11px;">Not in our database? Click "Add New" to map it.</small>
+                            <input type="hidden" name="authors[${authorIndex}][lat]" id="lat_${authorIndex}">
+                            <input type="hidden" name="authors[${authorIndex}][lng]" id="lng_${authorIndex}">
+                        </div>
+                        </div>
+                </div>
+            </div>
         `;
-        authorContainer.appendChild(newRow);
-
-        newRow.querySelector('.btn-remove-author').addEventListener('click', function() {
-            newRow.remove();
-        });
+        authorContainer.insertAdjacentHTML('beforeend', html);
     });
 
-    // --- ALUR STEP 1 -> STEP 2 (REVIEW) ---
-    const form = document.getElementById('submitForm');
+    authorContainer.addEventListener('click', function(e) {
+        if(e.target.classList.contains('remove-author')) {
+            e.target.closest('.author-block').remove();
+        }
+    });
+
+    // ==========================================
+    // LOGIKA MULTI-STEP & SUBMIT
+    // ==========================================
     const step1 = document.getElementById('step1_form');
     const step2 = document.getElementById('step2_review');
-    const step3 = document.getElementById('step3_receipt');
-    const errorAlert = document.getElementById('errorAlert');
+    const form = document.getElementById('submitForm');
 
-    document.getElementById('btnGoToReview').addEventListener('click', function() {
-        // Validasi HTML5 (Biar kalau ada yang kosong, disuruh isi dulu)
-        if (!form.reportValidity()) return;
-
-        // Ambil data dari form
-        const formData = new FormData(form);
-        
-        // Gabungkan array authors
-        const authorInputs = document.querySelectorAll('input[name="authors[]"]');
-        let authorArray = [];
-        authorInputs.forEach(input => authorArray.push(input.value));
-
-        // Tulis ke Tabel Review
-        document.getElementById('rev_title').innerText = formData.get('title');
-        document.getElementById('rev_authors').innerText = authorArray.join('; ');
-        document.getElementById('rev_abstract').innerText = formData.get('abstract');
-        document.getElementById('rev_type').innerText = formData.get('document_type');
-        document.getElementById('rev_year').innerText = formData.get('pub_year') || 'N/A';
-        document.getElementById('rev_pages').innerText = formData.get('pages') || 'N/A';
-        document.getElementById('rev_ref').innerText = formData.get('reference_count') || 'N/A';
-        document.getElementById('rev_name').innerText = formData.get('submitter_first_name') + ' ' + formData.get('submitter_last_name');
-        document.getElementById('rev_email').innerText = formData.get('submitter_email');
-        
-        // Ambil nama file PDF
-        const fileInput = document.getElementById('pdfFileInput');
-        if(fileInput.files.length > 0) {
-            document.getElementById('rev_file').innerText = fileInput.files[0].name;
+    // 1. TOMBOL "REVIEW SUBMISSION" (Dari Form ke Tabel)
+    document.getElementById('btnReview').addEventListener('click', function() {
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
         }
 
-        // Sembunyikan Step 1, Munculkan Step 2
+        const formData = new FormData(form);
+
+        document.getElementById('rev_title').innerText = formData.get('title');
+        document.getElementById('rev_abstract').innerText = formData.get('abstract');
+        document.getElementById('rev_keywords').innerText = formData.get('keywords') || '-';
+        document.getElementById('rev_type_year').innerText = formData.get('document_type') + ' (' + (formData.get('pub_year') || 'N/A') + ')';
+        
+        const pgs = formData.get('pages') ? formData.get('pages') + ' pages' : 'N/A';
+        const refs = formData.get('reference_count') ? formData.get('reference_count') + ' refs' : 'N/A';
+        document.getElementById('rev_pages_refs').innerText = pgs + ' | ' + refs;
+
+        const submitterName = formData.get('submitter_first_name') + ' ' + formData.get('submitter_last_name');
+        document.getElementById('rev_submitter').innerText = submitterName + ' (' + formData.get('submitter_email') + ')';
+
+        let authorsHtml = '<ol class="mb-0 ps-3">';
+        let index = 0;
+        while(formData.has(`authors[${index}][name]`)) {
+            let name = formData.get(`authors[${index}][name]`);
+            let email = formData.get(`authors[${index}][email]`);
+            let inst = formData.get(`authors[${index}][institution]`);
+            let country = formData.get(`authors[${index}][country]`);
+            
+            authorsHtml += `
+                <li class="mb-2">
+                    <strong>${name}</strong> <span class="text-muted">(${email})</span><br>
+                    <small style="color:#006600;">🏛️ ${inst} ${country ? '- ' + country : ''}</small>
+                </li>`;
+            index++;
+        }
+        authorsHtml += '</ol>';
+        document.getElementById('rev_authors').innerHTML = authorsHtml;
+
+        const fileInput = document.querySelector('input[name="pdf_file"]');
+        document.getElementById('rev_file').innerText = fileInput.files[0] ? '📄 ' + fileInput.files[0].name : '-';
+
         step1.classList.add('d-none');
         step2.classList.remove('d-none');
-        window.scrollTo(0,0);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-    // --- ALUR STEP 2 KEMBALI KE STEP 1 (EDIT) ---
-    document.getElementById('btnBackToForm').addEventListener('click', function() {
+    // 2. TOMBOL "BACK TO EDIT"
+    document.getElementById('btnBackEdit').addEventListener('click', function() {
         step2.classList.add('d-none');
         step1.classList.remove('d-none');
-        window.scrollTo(0,0);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-    // --- ALUR FINAL SUBMIT (STEP 2 -> STEP 3) ---
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        let btnFinalSubmit = document.getElementById('btnFinalSubmit');
-        let btnBackToForm = document.getElementById('btnBackToForm');
-        let formData = new FormData(form);
+    // 3. TOMBOL "FINAL SUBMIT" (Kirim Data ke Backend)
+    document.getElementById('btnSubmitFinal').addEventListener('click', function() {
+        const btn = this;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = 'Uploading Data... <span class="spinner-border spinner-border-sm"></span>';
+        btn.disabled = true;
+        document.getElementById('btnBackEdit').disabled = true;
 
-        // Kunci tombol agar tidak double klik
-        btnFinalSubmit.innerHTML = 'Verifying Document...';
-        btnFinalSubmit.disabled = true;
-        btnBackToForm.disabled = true;
-        errorAlert.classList.add('d-none');
+        const formData = new FormData(form);
 
         fetch('/submit-index', {
             method: 'POST',
-            body: formData,
-            headers: { 'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value }
+            headers: { 'Accept': 'application/json' },
+            body: formData
         })
-        .then(response => response.json().then(data => ({ status: response.status, body: data })))
+        .then(response => response.json().then(data => ({status: response.status, body: data})))
         .then(res => {
             if (res.status === 200) {
-                // REDIRECT OTOMATIS KE URL RECEIPT!
-                // Ini akan tersimpan di history browser
-                window.location.href = '/receipt/' + res.body.confirmation_id;
+                // 1. JURUS BUMI HANGUS: Kosongkan form biar nggak nyangkut di Cache Browser
+                document.getElementById('submitForm').reset();
+
+                // 2. CEK STATUS DARI CONTROLLER
+                if (res.body.status === 'pending_duplicate') {
+                    // Jika terdeteksi user lupa dan ngisi ulang (Pending)
+                    alert("⚠️ WARNING:\n\nYour submission is pending verification. Please check your email for verification link.");
+                    window.location.replace('/receipt/' + res.body.confirmation_id);
+                } else {
+                    // Jika Submit Baru sukses normal
+                    window.location.replace('/receipt/' + res.body.confirmation_id);
+                }
             } else {
-                // Balik ke Step 1 dan Munculkan Error
-                step2.classList.add('d-none');
-                step1.classList.remove('d-none');
-                errorAlert.classList.remove('d-none');
-                errorAlert.innerText = res.body.error || 'System error occurred during verification.';
-                window.scrollTo(0,0);
+                // Jika error 422 (termasuk kalau Judul sudah diverifikasi)
+                alert("❌ SUBMISSION FAILED:\n\n" + (res.body.error || "Please check your form entries and try again."));
+                
+                // Nyalakan tombol lagi
+                const btnSubmit = document.getElementById('btnSubmit');
+                btnSubmit.innerHTML = 'Submit to Index';
+                btnSubmit.disabled = false;
             }
         })
-        .finally(() => {
-            btnFinalSubmit.innerHTML = 'Final Submit';
-            btnFinalSubmit.disabled = false;
-            btnBackToForm.disabled = false;
+        .catch(err => {
+            alert('Failed to connect to the server. Please ensure your internet connection is stable.');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            document.getElementById('btnBackEdit').disabled = false;
         });
+    });
+
+    // --- LOGIKA LEAFLET MAP ---
+    let map = null;
+    let marker = null;
+    const mapModal = document.getElementById('mapModal');
+    
+    document.addEventListener('click', function(e) {
+        if(e.target.closest('.btn-add-inst')) {
+            document.getElementById('activeAuthorIndex').value = e.target.closest('.btn-add-inst').getAttribute('data-target-input');
+        }
+    });
+
+    mapModal.addEventListener('shown.bs.modal', function () {
+        if (!map) {
+            map = L.map('map').setView([-2.5489, 118.0149], 4);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            map.on('click', function(e) {
+                if (marker) map.removeLayer(marker);
+                marker = L.marker(e.latlng).addTo(map);
+                
+                document.getElementById('newInstLat').value = e.latlng.lat.toFixed(6);
+                document.getElementById('newInstLng').value = e.latlng.lng.toFixed(6);
+                document.getElementById('coordDisplay').innerText = `${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`;
+            });
+
+            L.Control.geocoder({
+                defaultMarkGeocode: false,
+                placeholder: "Search university or city..."
+            })
+            .on('markgeocode', function(e) {
+                var latlng = e.geocode.center;
+                if (marker) map.removeLayer(marker);
+                marker = L.marker(latlng).addTo(map);
+                map.flyTo(latlng, 15);
+                
+                document.getElementById('newInstLat').value = latlng.lat.toFixed(6);
+                document.getElementById('newInstLng').value = latlng.lng.toFixed(6);
+                document.getElementById('coordDisplay').innerText = `${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
+                
+                if(!document.getElementById('newInstName').value) {
+                    document.getElementById('newInstName').value = e.geocode.name.split(',')[0];
+                }
+            })
+            .addTo(map);
+        }
+        setTimeout(() => map.invalidateSize(), 100);
+    });
+
+    // Logika Simpan Institusi Baru
+    document.getElementById('btnSaveInstitution').addEventListener('click', function() {
+        const instName = document.getElementById('newInstName').value;
+        const instLat = document.getElementById('newInstLat').value;
+        const instLng = document.getElementById('newInstLng').value;
+        const targetIndex = document.getElementById('activeAuthorIndex').value;
+
+        if(!instName || !instLat) {
+            alert("Please enter the institution name and select a location on the map.");
+            return;
+        }
+
+        const inputField = document.querySelector(`input[name="authors[${targetIndex}][institution]"]`);
+        inputField.value = instName;
+        inputField.style.backgroundColor = "#e8f4f8";
+
+        // 👇 TAMBAHKAN 2 BARIS INI 👇
+        document.getElementById(`lat_${targetIndex}`).value = instLat;
+        document.getElementById(`lng_${targetIndex}`).value = instLng;
+        
+        document.querySelector('#mapModal .btn-close').click();
+        document.body.style.overflow = 'auto'; 
+
+        document.getElementById('newInstName').value = '';
+        document.getElementById('newInstCountry').value = '';
+        if(marker) map.removeLayer(marker);
+        document.getElementById('coordDisplay').innerText = 'Not selected';
+    });
+
+    // ==========================================
+    // LOGIKA LIVE SEARCH (AUTOCOMPLETE) INSTITUSI
+    // ==========================================
+    document.addEventListener('input', function(e) {
+        // Cek apakah yang diketik adalah kotak Institusi
+        if (e.target.classList.contains('inst-input')) {
+            const query = e.target.value;
+            const wrapper = e.target.closest('.col-md-6');
+            const suggestionBox = wrapper.querySelector('.inst-suggestions');
+
+            // Kalau huruf yang diketik kurang dari 2, sembunyikan saran
+            if (query.length < 2) {
+                suggestionBox.classList.add('d-none');
+                return;
+            }
+
+            // Panggil API secara diam-diam
+            fetch('/api/institutions?q=' + query)
+            .then(res => res.json())
+            .then(data => {
+                suggestionBox.innerHTML = ''; // Bersihkan saran lama
+                
+                if (data.length > 0) {
+                    data.forEach(inst => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item list-group-item-action cursor-pointer text-sm py-2';
+                        li.style.cursor = 'pointer';
+                        li.innerHTML = `<strong>${inst.name}</strong> <br><small class="text-muted">${inst.latitude ? '📍 Map Available' : ''}</small>`;
+                        
+                        // Kalau sarannya diklik:
+                        li.onclick = function() {
+                            e.target.value = inst.name; // Isi namanya
+                            e.target.style.backgroundColor = "#e8f4f8";
+                            
+                            // Isi koordinat tersembunyinya!
+                            const index = wrapper.querySelector('.btn-add-inst').getAttribute('data-target-input');
+                            document.getElementById(`lat_${index}`).value = inst.latitude || '';
+                            document.getElementById(`lng_${index}`).value = inst.longitude || '';
+                            
+                            // Tutup kotak saran
+                            suggestionBox.classList.add('d-none');
+                        };
+                        suggestionBox.appendChild(li);
+                    });
+                    suggestionBox.classList.remove('d-none'); // Tampilkan kotak
+                } else {
+                    suggestionBox.classList.add('d-none'); // Sembunyikan kalau tidak ada hasil
+                }
+            });
+        }
+    });
+
+    // Sembunyikan kotak saran kalau user klik di luar kotak
+    document.addEventListener('click', function(e) {
+        if (!e.target.classList.contains('inst-input')) {
+            document.querySelectorAll('.inst-suggestions').forEach(box => box.classList.add('d-none'));
+        }
     });
 </script>
 
-</body>
 <footer class="academic-footer">
     <div class="container">
         <div class="row">
@@ -324,4 +566,5 @@
         </div>
     </div>
 </footer>
+</body>
 </html>

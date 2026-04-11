@@ -20,4 +20,11 @@ class Document extends Model
     protected $casts = [
         'authors' => 'array',
     ];
+
+    // Relasi: 1 Dokumen Jurnal ditulis oleh banyak Author
+    public function authors()
+    {
+        return $this->belongsToMany(Author::class, 'author_document');
+    }
+    
 }

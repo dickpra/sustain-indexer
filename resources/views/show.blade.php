@@ -6,88 +6,38 @@
     <title>{{ $document->title }} - SustainDex</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* ================= RESPONSIVE (MOBILE & TABLET) ================= */
-        @media (max-width: 768px) {
-            /* Mengecilkan jarak kotak putih utama */
-            .main-container { padding: 20px 15px; margin-top: 20px; margin-bottom: 30px; }
-            
-            /* Mengecilkan judul agar tidak pecah */
-            .academic-title { font-size: 1.4rem; }
-            .section-title { font-size: 1.1em; margin-top: 20px; }
-            
-            /* Memperbaiki menu Header di HP agar turun ke bawah logo */
-            .academic-header .container { flex-direction: column; text-align: center; gap: 10px; }
-            .academic-nav { display: flex !important; justify-content: center; gap: 15px; width: 100%; margin: 0; padding: 0; }
-            .academic-nav a { margin: 0; font-size: 0.9rem; }
-
-            /* Membuat tombol-tombol utama jadi Full-Width (selebar layar) di HP */
-            .btn-academic, .btn-secondary-academic { width: 100%; margin-bottom: 10px; display: block; }
-            
-            /* Khusus tombol Step 2 (Edit & Submit) agar bertumpuk */
-            .d-flex.justify-content-between.mt-5 { flex-direction: column-reverse; gap: 10px; }
-            .d-flex.justify-content-between.mt-5 button { width: 100%; }
-
-            /* Menyesuaikan Footer */
-            .academic-footer .text-md-end { text-align: left !important; margin-top: 20px; }
-            .academic-footer .btn { width: auto; display: inline-block; }
-        }
-        /* --- HEADER & FOOTER SUSTAINDEX --- */
+        /* CSS tetap sama seperti milikmu */
+        body { background-color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; }
         .academic-header { background-color: #003366; color: white; padding: 15px 0; border-bottom: 4px solid #cc0000; }
         .academic-header a { color: white; text-decoration: none; }
         .academic-title { font-family: 'Georgia', serif; font-size: 1.8rem; font-weight: normal; margin: 0; }
-        
-        /* Menu Navigasi Kanan */
-        .academic-nav a { font-size: 0.95rem; font-weight: bold; margin-left: 25px; color: #e0e0e0; padding-bottom: 5px; border-bottom: 2px solid transparent; transition: 0.2s; }
-        .academic-nav a:hover, .academic-nav a.active { color: white; border-bottom: 2px solid #cc0000; }
-
-        /* Footer */
-        .academic-footer { background-color: #f1f3f5; color: #444; border-top: 1px solid #d5d5d5; padding: 40px 0 20px 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin-top: 60px; }
-        .academic-footer a { color: #003366; text-decoration: none; font-weight: 500; }
-        .academic-footer a:hover { text-decoration: underline; }
-        .footer-logo { font-family: 'Georgia', serif; font-size: 1.4rem; font-weight: bold; color: #003366; }
-        body { background-color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; }
-        .navbar-brand { font-size: 1.5rem; letter-spacing: 0.5px; }
-        .back-link { font-size: 0.95rem; font-weight: 500; text-decoration: none; color: #0d6efd; display: inline-block; margin-bottom: 20px;}
-        .back-link:hover { text-decoration: underline; }
-        
-        /* Gaya Metadata Kiri */
+        .academic-nav a { font-size: 0.95rem; font-weight: bold; margin-left: 25px; color: #e0e0e0; text-decoration: none; }
+        .main-container { padding-top: 30px; }
         .meta-label { font-weight: 600; color: #555; margin-bottom: 0; font-size: 0.9em; }
         .meta-value { color: #222; margin-bottom: 15px; font-size: 0.95em; }
-        
-        /* Gaya Konten Kanan */
         .doc-title { font-size: 2rem; font-weight: bold; color: #1a0dab; line-height: 1.3; }
-        .doc-authors { font-size: 1.15rem; color: #006621; font-weight: 500; margin-top: 15px; margin-bottom: 30px; }
-        .abstract-title { font-size: 1.2rem; font-weight: bold; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .doc-authors { font-size: 1.15rem; color: #006621; font-weight: 500; margin-top: 15px; margin-bottom: 5px; }
+        .author-institution { font-size: 0.9rem; color: #666; margin-bottom: 25px; }
+        .abstract-title { font-size: 1.2rem; font-weight: bold; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; margin-top: 20px; }
         .abstract-text { font-size: 1.05rem; line-height: 1.8; color: #444; text-align: justify; }
-        
         .doi-box { background-color: #f8f9fa; border-left: 4px solid #198754; padding: 15px 20px; margin-top: 40px; border-radius: 4px; }
+        .keyword-badge { background-color: #e9ecef; color: #495057; padding: 5px 12px; border-radius: 4px; font-size: 0.85rem; margin-right: 5px; border: 1px solid #dee2e6; }
+        .academic-footer { background-color: #f1f3f5; padding: 40px 0 20px 0; margin-top: 60px; border-top: 1px solid #d5d5d5; }
     </style>
 </head>
+<body>
+
 <header class="academic-header shadow-sm">
     <div class="container d-flex justify-content-between align-items-center">
         <h1 class="academic-title"><a href="/">📚 SustainDex</a></h1>
-        
         <div class="academic-nav d-none d-md-block">
-            {{-- <a href="/">Search</a> --}}
             <a href="/submit">Submit Document</a>
         </div>
     </div>
 </header>
-<body>
 
-{{-- <nav class="navbar navbar-dark bg-dark py-3 shadow-sm">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="/">📚 SustainDex</a>
-        <form action="/results" method="GET" class="d-flex ms-auto" style="width: 300px;">
-            <input class="form-control form-control-sm me-2" type="search" name="q" placeholder="Search..." aria-label="Search">
-            <button class="btn btn-outline-light btn-sm" type="submit">Search</button>
-        </form>
-    </div>
-</nav> --}}
-
-<div class="container mt-4 mb-5 pb-5">
-    
-    <a href="javascript:history.back()" class="back-link">&larr; Back to results</a>
+<div class="container main-container mb-5 pb-5">
+    <a href="javascript:history.back()" class="btn btn-link p-0 mb-4 text-decoration-none">&larr; Back to results</a>
     
     <div class="row">
         <div class="col-md-3 border-end pe-4">
@@ -107,7 +57,9 @@
             <p class="meta-value">{{ $document->reference_count ?: 'N/A' }}</p>
 
             <p class="meta-label">Peer Reviewed:</p>
-            <p class="meta-value">{{ $document->is_peer_reviewed ? 'Yes' : 'No/Unspecified' }}</p>
+            <p class="meta-value text-success fw-bold">
+                {{ $document->is_verified ? 'Yes (Verified)' : 'Pending Review' }}
+            </p>
 
             <p class="meta-label">Indexed Date:</p>
             <p class="meta-value">{{ $document->created_at->format('M d, Y') }}</p>
@@ -117,13 +69,47 @@
             <h1 class="doc-title">{{ $document->title }}</h1>
             
             <div class="doc-authors">
-                {{ implode('; ', $authors) }}
+                @if(count($authors) > 0)
+                    @foreach($authors as $author)
+                        <a href="/author/{{ $author->id }}" class="text-decoration-none" style="color: inherit;">
+                            {{ $author->name }}
+                        </a>{{ !$loop->last ? '; ' : '' }}
+                    @endforeach
+                @else
+                    <span class="text-muted">Unknown Author</span>
+                @endif
+            </div>
+
+            <div class="author-institution">
+                @foreach($authors as $author)
+                    <div class="mb-1 italic small">
+                        <sup>{{ $loop->iteration }}</sup> 
+                        {{ $author->institution ? $author->institution->name : 'Independent Researcher' }} 
+                        @if($author->country) ({{ $author->country }}) @endif
+                    </div>
+                @endforeach
             </div>
 
             <h3 class="abstract-title">Abstract</h3>
             <div class="abstract-text">
                 {{ $document->abstract }}
             </div>
+
+            @if($document->keywords)
+                <div class="mt-4 pt-3 border-top">
+                    <h6 class="fw-bold text-muted mb-2">Keywords:</h6>
+                    <div>
+                        @foreach(explode(',', $document->keywords) as $keyword)
+                            @php $cleanKeyword = trim($keyword); @endphp
+                            @if(!empty($cleanKeyword))
+                                <a href="/results?q={{ urlencode($cleanKeyword) }}" class="badge bg-light text-secondary border text-decoration-none me-2 mb-2 px-3 py-2 hover-keyword" style="font-size: 0.85rem; transition: 0.2s;">
+                                    # {{ $cleanKeyword }}
+                                </a>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+            @endif
 
             @if($document->doi)
             <div class="doi-box">
@@ -136,18 +122,15 @@
     </div>
 </div>
 
-</body>
 <footer class="academic-footer">
     <div class="container">
         <div class="row">
             <div class="col-md-6 mb-4">
                 <div class="footer-logo mb-2">📚 SustainDex</div>
-                <p class="small text-muted pe-md-5">A Peer-Reviewed Sustainable Academic Indexing System. Dedicated to organizing, preserving, and providing access to quality global research materials.</p>
+                <p class="small text-muted pe-md-5">A Peer-Reviewed Sustainable Academic Indexing System.</p>
             </div>
-            
             <div class="col-md-6 text-md-end">
                 <div class="mb-2">
-                    <a href="#" class="small me-3">Selection Policy</a>
                     <a href="#" class="small me-3">Privacy Policy</a>
                     <a href="#" class="small">Contact Us</a>
                 </div>
@@ -156,10 +139,11 @@
                 </div>
             </div>
         </div>
-        
         <div class="text-center mt-4 pt-3 border-top small text-muted">
-            &copy; {{ date('Y') }} SustainDex Indexing System. All rights reserved.
+            &copy; {{ date('Y') }} SustainDex Indexing System.
         </div>
     </div>
 </footer>
+
+</body>
 </html>

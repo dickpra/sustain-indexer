@@ -39,5 +39,10 @@ Route::get('/receipt/{id}', [App\Http\Controllers\DocumentController::class, 're
 // API untuk proses Kirim Ulang Email (Maks 3x per menit)
 Route::post('/resend-email', [App\Http\Controllers\DocumentController::class, 'resendEmail'])
     ->middleware('throttle:3,1');
+// Route untuk Live Search Institusi
+Route::get('/api/institutions', [\App\Http\Controllers\DocumentController::class, 'searchInstitutions']);
 
+// Route untuk melihat profil author berdasarkan ID
+Route::get('/author/{id}', [App\Http\Controllers\DocumentController::class, 'showAuthor']);
 
+Route::get('/institution/{id}', [App\Http\Controllers\DocumentController::class, 'showInstitution']);
