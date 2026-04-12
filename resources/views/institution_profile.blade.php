@@ -58,6 +58,10 @@
 <div class="profile-header text-center">
     <div class="container">
         <h1 class="profile-name mb-4">{{ $institution->name }}</h1>
+        <p class="text-muted mb-3" style="color: #fff !important;">
+            <i class="bi bi-geo-alt-fill me-1"></i> 
+            🌐 {{ $institution->country ?? 'International' }}
+        </p>
         <div class="d-flex justify-content-center gap-3 flex-wrap">
             <span class="stat-badge">👥 <span id="totalAuthors">...</span> Researchers</span>
             <span class="stat-badge">📄 {{ $totalDocuments }} Publications</span>

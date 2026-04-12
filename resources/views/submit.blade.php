@@ -533,6 +533,12 @@
             });
 
             L.Control.geocoder({
+                // 🔥 TAMBAHKAN BARIS INI: Memaksa Nominatim pakai bahasa Inggris (en)
+                geocoder: L.Control.Geocoder.nominatim({
+                    geocodingQueryParams: {
+                        'accept-language': 'en'
+                    }
+                }),
                 defaultMarkGeocode: false,
                 placeholder: "Search university or city..."
             })
