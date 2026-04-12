@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Submit Document - SustainDex</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -27,11 +28,13 @@
         /* Desain Blok Author */
         .author-block { background-color: #f8f9fa; border: 1px solid #e0e0e0; padding: 20px; margin-bottom: 15px; position: relative; }
         .author-badge { position: absolute; top: -12px; left: 15px; background: #cc0000; color: white; padding: 2px 15px; font-size: 0.85em; font-weight: bold; }
+        .coauthor-badge { background: #003366 !important; color: #fff !important; }
         .remove-author { position: absolute; top: 10px; right: 15px; }
         
         /* Map Container */
         #map { height: 300px; width: 100%; border: 1px solid #ccc; margin-top: 10px; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
 
@@ -104,11 +107,11 @@
                             <div class="row mt-2">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label small">Full Name <span class="text-danger">*</span></label>
-                                    <input type="text" name="authors[0][name]" class="form-control" required>
+                                    <input type="text" name="authors[0][name]" class="form-control" placeholder="e.g. Jane Smith" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label small">Email Address <span class="text-danger">*</span></label>
-                                    <input type="email" name="authors[0][email]" class="form-control" required>
+                                    <input type="email" name="authors[0][email]" class="form-control" placeholder="e.g. jane@univ.edu" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label small">Country</label>
@@ -244,47 +247,50 @@
     let authorIndex = 0;
 
     document.getElementById('btnAddAuthor').addEventListener('click', function() {
+        // Tambah author baru
         authorIndex++;
         let html = `
-            <div class="card mb-3 author-card" id="author_${authorIndex}">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0 text-primary">Author ${authorIndex + 1}</h5>
-                        <button type="button" class="btn btn-sm btn-outline-danger btn-remove-author">Remove</button>
+        <div class="card mb-3 author-card" id="author_${authorIndex}">
+            <div class="card-body position-relative">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="author-badge coauthor-badge">Author ${authorIndex + 1}</div>
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-author remove-author">Remove</button>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small">Full Name <span class="text-danger">*</span></label>
+                        <input type="text" name="authors[${authorIndex}][name]" class="form-control" placeholder="e.g. Jane Smith" required>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label small">Full Name <span class="text-danger">*</span></label>
-                            <input type="text" name="authors[${authorIndex}][name]" class="form-control" placeholder="e.g. Jane Smith" required>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small">Email Address <span class="text-danger">*</span></label>
+                        <input type="email" name="authors[${authorIndex}][email]" class="form-control" placeholder="e.g. jane@univ.edu" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small">Country</label>
+                        <input type="text" name="authors[${authorIndex}][country]" class="form-control" placeholder="e.g. United Kingdom">
+                    </div>
+                    
+                    <div class="col-md-6 mb-3 position-relative">
+                        <label class="form-label small">Institution / Affiliation <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="text" name="authors[${authorIndex}][institution]" class="form-control inst-input" placeholder="Search institution..." autocomplete="off" required>
+                            <button class="btn btn-outline-secondary btn-add-inst" type="button" data-bs-toggle="modal" data-bs-target="#mapModal" data-target-input="${authorIndex}">
+                                🗺️ Add New
+                            </button>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label small">Email Address <span class="text-danger">*</span></label>
-                            <input type="email" name="authors[${authorIndex}][email]" class="form-control" placeholder="e.g. jane@univ.edu" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label small">Country</label>
-                            <input type="text" name="authors[${authorIndex}][country]" class="form-control" placeholder="e.g. United Kingdom">
-                        </div>
+                        <ul class="list-group position-absolute w-100 d-none inst-suggestions shadow" style="z-index: 1050; max-height: 200px; overflow-y: auto;"></ul>
                         
-                        <div class="col-md-6 mb-3 position-relative">
-                            <label class="form-label small">Institution / Affiliation <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <input type="text" name="authors[${authorIndex}][institution]" class="form-control inst-input" placeholder="Search institution..." autocomplete="off" required>
-                                <button class="btn btn-outline-secondary btn-add-inst" type="button" data-bs-toggle="modal" data-bs-target="#mapModal" data-target-input="${authorIndex}">
-                                    🗺️ Add New
-                                </button>
-                            </div>
-                            <ul class="list-group position-absolute w-100 d-none inst-suggestions shadow" style="z-index: 1050; max-height: 200px; overflow-y: auto;"></ul>
-                            
-                            <small class="text-muted" style="font-size: 11px;">Not in our database? Click "Add New" to map it.</small>
-                            <input type="hidden" name="authors[${authorIndex}][lat]" id="lat_${authorIndex}">
-                            <input type="hidden" name="authors[${authorIndex}][lng]" id="lng_${authorIndex}">
-                        </div>
-                        </div>
+                        <small class="text-muted" style="font-size: 11px;">Not in our database? Click "Add New" to map it.</small>
+                        <input type="hidden" name="authors[${authorIndex}][lat]" id="lat_${authorIndex}">
+                        <input type="hidden" name="authors[${authorIndex}][lng]" id="lng_${authorIndex}">
+                    </div>
                 </div>
             </div>
-        `;
+        </div>
+    `;
         authorContainer.insertAdjacentHTML('beforeend', html);
+        updateAuthorNumbers();
     });
 
     authorContainer.addEventListener('click', function(e) {
@@ -293,8 +299,51 @@
         
         if(removeBtn) {
             removeBtn.closest('.author-card').remove();
+            updateAuthorNumbers();
         }
     });
+
+    // Fungsi untuk update nomor dan atribut author setelah add/remove
+    function updateAuthorNumbers() {
+        const authorCards = authorContainer.querySelectorAll('.author-card, .author-block');
+        authorCards.forEach((card, idx) => {
+            // Update judul
+            let title = card.querySelector('.card-title, .author-badge');
+            if (title) {
+                if (idx === 0) {
+                    // Primary author
+                    if (title.classList.contains('author-badge')) {
+                        title.textContent = `Author 1 (Primary)`;
+                    } else {
+                        title.textContent = `Author 1 (Primary)`;
+                    }
+                } else {
+                    if (title.classList.contains('author-badge')) {
+                        title.textContent = `Author ${idx + 1}`;
+                    } else {
+                        title.textContent = `Author ${idx + 1}`;
+                    }
+                }
+            }
+            // Update semua input name dan id
+            card.querySelectorAll('input, button').forEach(input => {
+                if (input.name) {
+                    input.name = input.name.replace(/authors\[\d+\]/, `authors[${idx}]`);
+                }
+                if (input.id && input.id.match(/^lat_\d+$/)) {
+                    input.id = `lat_${idx}`;
+                }
+                if (input.id && input.id.match(/^lng_\d+$/)) {
+                    input.id = `lng_${idx}`;
+                }
+                if (input.getAttribute('data-target-input') !== null) {
+                    input.setAttribute('data-target-input', idx);
+                }
+            });
+        });
+        // Reset authorIndex ke jumlah terakhir
+        authorIndex = authorCards.length - 1;
+    }
 
     // ==========================================
     // LOGIKA MULTI-STEP & SUBMIT
@@ -365,40 +414,91 @@
         btn.disabled = true;
         document.getElementById('btnBackEdit').disabled = true;
 
-        const formData = new FormData(form);
+        const formElement = document.getElementById('submitForm'); // Ganti kalau ID form-mu beda
+        const formData = new FormData(formElement);
 
         fetch('/submit-index', {
             method: 'POST',
-            headers: { 'Accept': 'application/json' },
+            headers: { 
+                'Accept': 'application/json',
+                // 🔥 WAJIB ADA: Biar Laravel tahu ini bukan serangan hacker (CSRF)
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
+            },
             body: formData
         })
         .then(response => response.json().then(data => ({status: response.status, body: data})))
         .then(res => {
-            if (res.status === 200) {
-                // 1. JURUS BUMI HANGUS: Kosongkan form biar nggak nyangkut di Cache Browser
+            if (res.status === 200 || res.status === 201) {
+                // 1. JURUS BUMI HANGUS: Kosongkan form
                 document.getElementById('submitForm').reset();
 
                 // 2. CEK STATUS DARI CONTROLLER
                 if (res.body.status === 'pending_duplicate') {
-                    // Jika terdeteksi user lupa dan ngisi ulang (Pending)
-                    alert("⚠️ WARNING:\n\nYour submission is pending verification. Please check your email for verification link.");
-                    window.location.replace('/receipt/' + res.body.confirmation_id);
+                    // POPUP KUNING (WARNING)
+                    Swal.fire({
+                        title: 'Status Pending',
+                        text: 'This submission is currently pending due to potential duplicates. Please check the receipt for details.',
+                        icon: 'warning',
+                        confirmButtonColor: '#f39c12',
+                        confirmButtonText: 'View Receipt'
+                    }).then(() => {
+                        window.location.replace('/receipt/' + res.body.confirmation_id);
+                    });
                 } else {
-                    // Jika Submit Baru sukses normal
-                    window.location.replace('/receipt/' + res.body.confirmation_id);
+                    // POPUP HIJAU (SUKSES NORMAL)
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Book has been successfully submitted to the index.',
+                        icon: 'success',
+                        showConfirmButton: false, // Hilangkan tombol biar elegan
+                        timer: 1500 // Otomatis pindah setelah 1.5 detik
+                    }).then(() => {
+                        window.location.replace('/receipt/' + res.body.confirmation_id);
+                    });
                 }
             } else {
-                // Jika error 422 (termasuk kalau Judul sudah diverifikasi)
-                alert("❌ SUBMISSION FAILED:\n\n" + (res.body.error || "Please check your form entries and try again."));
+            // --- JURUS DETEKTIF ERROR LARAVEL ---
+                let errorMessage = "Check your form, something seems wrong.";
+
+                // 1. Cek apakah ini error validasi bawaan Laravel (ada object 'errors')
+                if (res.body.errors) {
+                    // Ambil nama kolom pertama yang error (misal: 'title')
+                    const firstErrorField = Object.keys(res.body.errors)[0];
+                    // Ambil pesan error pertamanya
+                    errorMessage = res.body.errors[firstErrorField][0];
+                } 
+                // 2. Cek apakah ini error kustom dari Controller (pakai 'message' atau 'error')
+                else if (res.body.message && res.body.message !== "The given data was invalid.") {
+                    errorMessage = res.body.message;
+                } else if (res.body.error) {
+                    errorMessage = res.body.error;
+                }
+                // ------------------------------------
+
+                // POPUP MERAH (ERROR VALIDASI / JUDUL DOUBLE)
+                Swal.fire({
+                    title: 'Oops! Cannot Submit',
+                    text: errorMessage, // <--- Sekarang pakai pesan yang sudah dilacak
+                    icon: 'error',
+                    confirmButtonColor: '#cc0000',
+                    confirmButtonText: 'Fix Form'
+                });
                 
                 // Nyalakan tombol lagi
-                const btnSubmit = document.getElementById('btnSubmit');
-                btnSubmit.innerHTML = 'Submit to Index';
-                btnSubmit.disabled = false;
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                document.getElementById('btnBackEdit').disabled = false;
             }
         })
         .catch(err => {
-            alert('Failed to connect to the server. Please ensure your internet connection is stable.');
+            // POPUP MERAH (ERROR SERVER / KONEKSI)
+            Swal.fire({
+                title: 'Connection Error',
+                text: 'Failed to process data. Original error message: ' + err.message,
+                icon: 'error',
+                confirmButtonColor: '#cc0000'
+            });
+
             btn.innerHTML = originalText;
             btn.disabled = false;
             document.getElementById('btnBackEdit').disabled = false;

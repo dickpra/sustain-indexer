@@ -74,26 +74,38 @@ class DocumentController extends Controller
         $pdf = $parser->parseFile($fullPath);
         $rawText = $pdf->getText();
 
-        // 3. PEMBERSIHAN EKSTREM
-        $ultraCleanPdfText = preg_replace('/[^a-z0-9]/', '', strtolower($rawText));
-        $ultraCleanInputTitle = preg_replace('/[^a-z0-9]/', '', strtolower($request->title));
+        // 3. NORMALISASI TEKS (JURUS SPASI HILANG)
+        // Kita hapus SEMUA spasi, enter, dan simbol. Hanya sisakan huruf murni dan angka!
+        $superCleanPdfText = preg_replace('/[^a-z0-9]/i', '', strtolower($rawText));
+        $superCleanInputTitle = preg_replace('/[^a-z0-9]/i', '', strtolower($request->title));
 
-        // 4. DUAL VALIDATION: Cek Judul
-        if (!str_contains($ultraCleanPdfText, $ultraCleanInputTitle)) {
+        // [SAFETY NET] Cek apakah PDF bisa dibaca (antisipasi PDF hasil scan)
+        if (empty($superCleanPdfText)) {
             \Illuminate\Support\Facades\Storage::delete($path);
             return response()->json([
-                'error' => 'Validasi Ditolak: Judul dokumen tidak ditemukan di dalam file PDF.'
+                'error' => 'System Rejection: The uploaded PDF file appears to be unreadable or is likely a scanned image. Please ensure you upload a text-based PDF document.'
             ], 422);
         }
 
-        // 5. DUAL VALIDATION: Cek SEMUA Author
-        foreach ($request->authors as $authorData) {
-            $ultraCleanAuthor = preg_replace('/[^a-z0-9]/', '', strtolower($authorData['name']));
+        // 4. DUAL VALIDATION: Cek Judul Tanpa Spasi
+        if (!str_contains($superCleanPdfText, $superCleanInputTitle)) {
+            \Illuminate\Support\Facades\Storage::delete($path);
             
-            if (!str_contains($ultraCleanPdfText, $ultraCleanAuthor)) {
+            // DEBUGGING: Kita keluarkan potongan teksnya di error biar ketahuan apa yang dibaca mesin!
+            $pdfSnippet = substr($superCleanPdfText, 0, 50) . '...';
+            return response()->json([
+                'error' => 'Validation Rejected: The title was not found exactly in the PDF file. (System read: ' . $pdfSnippet . ')'
+            ], 422);
+        }
+
+        // 5. DUAL VALIDATION: Cek SEMUA Author Tanpa Spasi
+        foreach ($request->authors as $authorData) {
+            $superCleanAuthor = preg_replace('/[^a-z0-9]/i', '', strtolower($authorData['name']));
+            
+            if (!str_contains($superCleanPdfText, $superCleanAuthor)) {
                 \Illuminate\Support\Facades\Storage::delete($path);
                 return response()->json([
-                    'error' => 'Validasi Ditolak: Nama Penulis ("' . $authorData['name'] . '") tidak ditemukan di file PDF.'
+                    'error' => 'Validation Rejected: Author name ("' . $authorData['name'] . '") was not found in the PDF file.'
                 ], 422);
             }
         }
@@ -193,7 +205,7 @@ class DocumentController extends Controller
             \Illuminate\Support\Facades\Log::error('SustainDex Submit Error: ' . $e->getMessage());
 
             return response()->json([
-                'error' => 'Sistem gagal memproses dokumen: ' . $e->getMessage()
+                'error' => 'System failed to process the document: ' . $e->getMessage()
             ], 500);
         }
     }
