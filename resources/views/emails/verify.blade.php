@@ -2,7 +2,7 @@
 <html>
 <head>
     <style>
-        /* Desain Akademik Khas SustainDex */
+        /* Desain Akademik Khas SustaIndex */
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #ccc; }
         .header { background: #003366; color: white; padding: 25px 20px; text-align: center; border-top: 5px solid #cc0000; }
@@ -16,13 +16,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <h2>📚 SustainDex</h2>
+            <h2>📚 SustaIndex</h2>
         </div>
         
         <div class="content">
             <p>Dear <strong>{{ $document->submitter_first_name }} {{ $document->submitter_last_name }}</strong>,</p>
             
-            <p>Thank you for submitting your research material to the SustainDex Academic Indexing System. To complete the indexing process and securely publish your document, please verify your submission.</p>
+            <p>Thank you for submitting your research material to the SustaIndex Academic Indexing System. To complete the indexing process and securely publish your document, please verify your submission.</p>
             
             <div class="info-box">
                 <strong>Title:</strong> {{ $document->title }}<br><br>
@@ -42,7 +42,7 @@
         
         <div class="footer">
             <p style="margin: 0;">This is an automated message from the indexing system. If you did not submit this document, please disregard this email.</p>
-            <p style="margin: 10px 0 0 0; font-weight: bold;">&copy; {{ date('Y') }} SustainDex System. All rights reserved.</p>
+            <p style="margin: 10px 0 0 0; font-weight: bold;">&copy; {{ date('Y') }} SustaIndex System. All rights reserved.</p>
         </div>
     </div>
 </body>

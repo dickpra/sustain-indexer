@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SustainDex - Academic Index</title>
+    <title>SustaIndex - Academic Index</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         /* ================= RESPONSIVE KHUSUS HOME (MOBILE) ================= */
@@ -22,7 +22,7 @@
             /* Membuat tombol Search & Submit sejajar atas bawah dan full width */
             .btn-action { display: block; width: 100%; margin: 10px 0; }
         }
-        /* --- HEADER & FOOTER SUSTAINDEX --- */
+        /* --- HEADER & FOOTER SustaIndex --- */
         .academic-header { background-color: #003366; color: white; padding: 15px 0; border-bottom: 4px solid #cc0000; }
         .academic-header a { color: white; text-decoration: none; }
         .academic-title { font-family: 'Georgia', serif; font-size: 1.8rem; font-weight: normal; margin: 0; }
@@ -54,7 +54,7 @@
 </div>
 
 <div class="container center-wrapper">
-    <div class="brand-logo">📚SustainDex<span>Search</span></div>
+    <div class="brand-logo">📚SustaIndex<span>Search</span></div>
     
     <div class="search-box">
         <form action="/results" method="GET">
@@ -77,7 +77,7 @@
     <div class="container">
         <div class="row">
             <div class="col-md-6 mb-4">
-                <div class="footer-logo mb-2">📚 SustainDex</div>
+                <div class="footer-logo mb-2">📚 SustaIndex</div>
                 <p class="small text-muted pe-md-5">A Peer-Reviewed Sustainable Academic Indexing System. Dedicated to organizing, preserving, and providing access to quality global research materials.</p>
             </div>
             
@@ -94,7 +94,7 @@
         </div>
         
         <div class="text-center mt-4 pt-3 border-top small text-muted">
-            &copy; {{ date('Y') }} SustainDex Indexing System. All rights reserved.
+            &copy; {{ date('Y') }} SustaIndex System. All rights reserved.
         </div>
     </div>
 </footer>

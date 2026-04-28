@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $institution->name }} - SustainDex Affiliation</title>
+    <title>{{ $institution->name }} - SustaIndex Affiliation</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         /* ================= RESPONSIVE & GLOBAL ================= */
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
-        /* HEADER & FOOTER SUSTAINDEX (Sesuai kode sebelumnya) */
+        /* HEADER & FOOTER SustaIndex (Sesuai kode sebelumnya) */
         .academic-header { background-color: #003366; color: white; padding: 15px 0; border-bottom: 4px solid #cc0000; }
         .academic-header a { color: white; text-decoration: none; }
         .academic-title { font-family: 'Georgia', serif; font-size: 1.8rem; margin: 0; }
@@ -46,14 +46,7 @@
 </head>
 <body>
 
-<header class="academic-header shadow-sm">
-    <div class="container d-flex justify-content-between align-items-center">
-        <h1 class="academic-title"><a href="/">📚 SustainDex</a></h1>
-        <div class="academic-nav">
-            <a href="/submit">Submit Document</a>
-        </div>
-    </div>
-</header>
+@include('partials.header')
 
 <div class="profile-header text-center">
     <div class="container">
@@ -124,28 +117,7 @@
     </div>
 </div>
 
-<footer class="academic-footer">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="footer-logo mb-2" style="font-family: Georgia; font-size: 1.4rem; font-weight: bold; color: #003366;">📚 SustainDex</div>
-                <p class="small text-muted pe-md-5">A Peer-Reviewed Sustainable Academic Indexing System. Dedicated to organizing research materials globaly.</p>
-            </div>
-            <div class="col-md-6 text-md-end">
-                <div class="mb-2">
-                    <a href="#" class="small me-3">Privacy Policy</a>
-                    <a href="#" class="small">Contact Us</a>
-                </div>
-                <div class="mt-3">
-                    <a href="/submit" class="btn btn-sm btn-outline-secondary rounded-0 fw-bold">Index Your Work</a>
-                </div>
-            </div>
-        </div>
-        <div class="text-center mt-4 pt-3 border-top small text-muted">
-            &copy; {{ date('Y') }} SustainDex. All rights reserved.
-        </div>
-    </div>
-</footer>
+@include('partials.footer')
 
 <script>
     const institutionId = {{ $institution->id }};

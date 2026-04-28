@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $document->title }} - SustainDex</title>
+    <title>{{ $document->title }} - SustaIndex</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         /* CSS tetap sama seperti milikmu */
@@ -27,14 +27,7 @@
 </head>
 <body>
 
-<header class="academic-header shadow-sm">
-    <div class="container d-flex justify-content-between align-items-center">
-        <h1 class="academic-title"><a href="/">📚 SustainDex</a></h1>
-        <div class="academic-nav d-none d-md-block">
-            <a href="/submit">Submit Document</a>
-        </div>
-    </div>
-</header>
+@include('partials.header')
 
 <div class="container main-container mb-5 pb-5">
     <a href="javascript:history.back()" class="btn btn-link p-0 mb-4 text-decoration-none">&larr; Back to results</a>
@@ -122,28 +115,7 @@
     </div>
 </div>
 
-<footer class="academic-footer">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="footer-logo mb-2">📚 SustainDex</div>
-                <p class="small text-muted pe-md-5">A Peer-Reviewed Sustainable Academic Indexing System.</p>
-            </div>
-            <div class="col-md-6 text-md-end">
-                <div class="mb-2">
-                    <a href="#" class="small me-3">Privacy Policy</a>
-                    <a href="#" class="small">Contact Us</a>
-                </div>
-                <div class="mt-3">
-                    <a href="/submit" class="btn btn-sm btn-outline-secondary rounded-0 fw-bold">Index Your Work</a>
-                </div>
-            </div>
-        </div>
-        <div class="text-center mt-4 pt-3 border-top small text-muted">
-            &copy; {{ date('Y') }} SustainDex Indexing System.
-        </div>
-    </div>
-</footer>
+@include('partials.footer')
 
 </body>
 </html>

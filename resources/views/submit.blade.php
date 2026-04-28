@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Submit Document - SustainDex</title>
+    <title>Submit Document - SustaIndex</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
@@ -40,7 +40,7 @@
 
 <div class="academic-header">
     <div class="container d-flex justify-content-between align-items-center">
-        <h1 class="academic-title"><a href="/">📚 SustainDex Index</a></h1>
+        <h1 class="academic-title"><a href="/">📚 SustaIndex</a></h1>
         <a href="/" class="btn btn-sm btn-outline-light rounded-0">Cancel</a>
     </div>
 </div>
@@ -650,30 +650,6 @@
     });
 </script>
 
-<footer class="academic-footer">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="footer-logo mb-2">📚 SustainDex</div>
-                <p class="small text-muted pe-md-5">A Peer-Reviewed Sustainable Academic Indexing System. Dedicated to organizing, preserving, and providing access to quality global research materials.</p>
-            </div>
-            
-            <div class="col-md-6 text-md-end">
-                <div class="mb-2">
-                    <a href="#" class="small me-3">Selection Policy</a>
-                    <a href="#" class="small me-3">Privacy Policy</a>
-                    <a href="#" class="small">Contact Us</a>
-                </div>
-                <div class="mt-3">
-                    <a href="/submit" class="btn btn-sm btn-outline-secondary rounded-0 fw-bold">Index Your Work</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="text-center mt-4 pt-3 border-top small text-muted">
-            &copy; {{ date('Y') }} SustainDex Indexing System. All rights reserved.
-        </div>
-    </div>
-</footer>
+@include('partials.footer')
 </body>
 </html>

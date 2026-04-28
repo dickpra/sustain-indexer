@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Submission Receipt - SustainDex</title>
+    <title>Submission Receipt - SustaIndex</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         /* ================= RESPONSIVE (MOBILE & TABLET) ================= */
@@ -43,7 +43,7 @@
 
 <div class="academic-header shadow-sm">
     <div class="container d-flex justify-content-between align-items-center">
-        <h1 class="academic-title"><a href="/">📚 SustainDex</a></h1>
+        <h1 class="academic-title"><a href="/">📚 SustaIndex</a></h1>
     </div>
 </div>
 
@@ -67,7 +67,7 @@
             @if($document->is_verified)
                 <div class="alert alert-success rounded-0 mt-3 d-inline-block text-start" style="border-left: 4px solid #198754; background-color: #d4edda;">
                     <strong>✅ Document Verified!</strong><br>
-                    Your document has been successfully verified and is now live in the SustainDex index.
+                    Your document has been successfully verified and is now live in the SustaIndex index.
                 </div>
             @else
                 <div class="alert alert-warning rounded-0 mt-3 d-inline-block text-start" style="border-left: 4px solid #ffc107;">
@@ -151,29 +151,5 @@
 </script>
 
 </body>
-<footer class="academic-footer">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="footer-logo mb-2">📚 SustainDex</div>
-                <p class="small text-muted pe-md-5">A Peer-Reviewed Sustainable Academic Indexing System. Dedicated to organizing, preserving, and providing access to quality global research materials.</p>
-            </div>
-            
-            <div class="col-md-6 text-md-end">
-                <div class="mb-2">
-                    <a href="#" class="small me-3">Selection Policy</a>
-                    <a href="#" class="small me-3">Privacy Policy</a>
-                    <a href="#" class="small">Contact Us</a>
-                </div>
-                <div class="mt-3">
-                    <a href="/submit" class="btn btn-sm btn-outline-secondary rounded-0 fw-bold">Index Your Work</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="text-center mt-4 pt-3 border-top small text-muted">
-            &copy; {{ date('Y') }} SustainDex Indexing System. All rights reserved.
-        </div>
-    </div>
-</footer>
+@include('partials.footer')
 </html>
