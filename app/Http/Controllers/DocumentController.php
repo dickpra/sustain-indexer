@@ -110,12 +110,33 @@ class DocumentController extends Controller
             }
         }
 
-        // 6. Ekstraksi DOI
+        // =======================================================
+        // 6. EKSTRAKSI DOI & AUTO-FETCH SITASI (CROSSREF API)
+        // =======================================================
         $doi = null;
+        $citationCount = 0; // Default jumlah sitasi adalah 0
+        
         $doiPattern = '/10\.\d{4,9}\/[-._;()\/:A-Z0-9]+/i';
+        
         if (preg_match($doiPattern, $rawText, $matches)) {
-            $doi = 'https://doi.org/' . $matches[0];
+            $rawDoi = $matches[0]; // Format asli: 10.xxxx/yyyy
+            $doi = 'https://doi.org/' . $rawDoi; // Format Link URL
+
+            // 🔥 Kita tembak API Crossref diem-diem buat nyuri data sitasinya!
+            try {
+                // Timeout 5 detik biar kalau Crossref lemot, webmu gak ikutan hang
+                $response = \Illuminate\Support\Facades\Http::timeout(5)->get('https://api.crossref.org/works/' . $rawDoi);
+                
+                if ($response->successful()) {
+                    // Ambil angka sitasi dari JSON balasan Crossref
+                    $citationCount = $response->json('message.is-referenced-by-count') ?? 0;
+                }
+            } catch (\Exception $e) {
+                // Kalau API gagal/down, diamkan saja (tetap 0). Jangan ganggu proses submit.
+                \Illuminate\Support\Facades\Log::warning("Gagal ambil sitasi Crossref untuk DOI: " . $rawDoi);
+            }
         }
+        // =======================================================
 
         // =========================================================
         // 7. TRANSAKSI DATABASE (ANTI-GAGAL & DEDUPLIKASI)
@@ -174,6 +195,7 @@ class DocumentController extends Controller
                 'pages' => $request->pages,                     
                 'reference_count' => $request->reference_count, 
                 'doi' => $doi,
+                'citation_count' => $citationCount,
                 'verification_token' => $token,
                 'submitter_first_name' => $request->submitter_first_name, 
                 'submitter_last_name' => $request->submitter_last_name,   

@@ -34,6 +34,17 @@
     
     <div class="row">
         <div class="col-md-3 border-end pe-4">
+            
+            <div class="card border-0 shadow-sm mb-4" style="background-color: #f4f8fc; border-left: 4px solid #003366 !important;">
+                <div class="card-body py-3">
+                    <div class="text-muted small fw-bold text-uppercase mb-1" style="letter-spacing: 1px;">Citations</div>
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-quote fs-3 text-primary me-2" style="opacity: 0.5;"></i>
+                        <h2 class="fw-bold text-primary mb-0">{{ $document->citation_count ?? 0 }}</h2>
+                    </div>
+                    <div class="text-muted mt-1" style="font-size: 10px;"><i>Data indexed from Crossref API</i></div>
+                </div>
+            </div>
             <p class="meta-label">Document Number:</p>
             <p class="meta-value text-primary fw-bold">{{ $document->document_number }}</p>
 
@@ -64,7 +75,7 @@
             <div class="doc-authors">
                 @if(count($authors) > 0)
                     @foreach($authors as $author)
-                        <a href="/author/{{ $author->id }}" class="text-decoration-none" style="color: inherit;">
+                        <a href="/author/{{ $author->id }}" class="text-decoration-none fw-medium" style="color: #003366;">
                             {{ $author->name }}
                         </a>{{ !$loop->last ? '; ' : '' }}
                     @endforeach
@@ -73,18 +84,18 @@
                 @endif
             </div>
 
-            <div class="author-institution">
+            <div class="author-institution mt-2 mb-4">
                 @foreach($authors as $author)
-                    <div class="mb-1 italic small">
-                        <sup>{{ $loop->iteration }}</sup> 
+                    <div class="text-muted small mb-1">
+                        <sup class="fw-bold">{{ $loop->iteration }}</sup> 
                         {{ $author->institution ? $author->institution->name : 'Independent Researcher' }} 
                         @if($author->country) ({{ $author->country }}) @endif
                     </div>
                 @endforeach
             </div>
 
-            <h3 class="abstract-title">Abstract</h3>
-            <div class="abstract-text">
+            <h3 class="abstract-title h5 fw-bold border-bottom pb-2 mb-3">Abstract</h3>
+            <div class="abstract-text text-justify" style="line-height: 1.7;">
                 {{ $document->abstract }}
             </div>
 
@@ -105,9 +116,11 @@
             @endif
 
             @if($document->doi)
-            <div class="doi-box">
-                <span class="fw-bold d-block mb-1 text-success">Direct Link (DOI):</span>
-                <a href="{{ $document->doi }}" target="_blank" class="text-decoration-none fs-5">{{ $document->doi }}</a>
+            <div class="doi-box mt-4 p-3 bg-light rounded border">
+                <span class="fw-bold d-block mb-1 text-secondary small text-uppercase">Direct Link (DOI):</span>
+                <a href="{{ $document->doi }}" target="_blank" class="text-decoration-none text-primary fw-medium text-break">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>{{ $document->doi }}
+                </a>
             </div>
             @endif
             

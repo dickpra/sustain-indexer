@@ -250,7 +250,6 @@
                     let authorText = '<span class="text-muted fst-italic">Unknown Author</span>';
                     if (item.authors && item.authors.length > 0) {
                         authorText = item.authors.map(a => {
-                            // Nama institusi bisa diklik jika ada
                             let inst = '';
                             if (a.institution) {
                                 inst = ` <a href="/institution/${a.institution.id}" class="text-secondary small text-decoration-none">(${a.institution.name})</a>`;
@@ -263,25 +262,39 @@
 
                     let keywordsHtml = '';
                     if (item.keywords) {
-                        // Pecah string "Violet, Red" jadi array, lalu jadikan tombol link
                         let keywordArray = item.keywords.split(',');
                         keywordsHtml = '<div class="mt-3">' + keywordArray.map(k => {
-                            let cleanWord = k.trim(); // Hilangkan spasi berlebih
-                            // Tombol link akan otomatis mengarah ke URL pencarian /?q=namakeyword
-                        return `<a href="/results?q=${encodeURIComponent(cleanWord)}" class="badge bg-light text-secondary border text-decoration-none me-2 mb-1 hover-keyword" style="transition: 0.2s;"># ${cleanWord}</a>`;                        }).join('') + '</div>';
+                            let cleanWord = k.trim();
+                            return `<a href="/results?q=${encodeURIComponent(cleanWord)}" class="badge bg-light text-secondary border text-decoration-none me-2 mb-1 hover-keyword" style="transition: 0.2s;"># ${cleanWord}</a>`;
+                        }).join('') + '</div>';
                     }
 
+                    // ==========================================
+                    // FITUR BARU: AMBIL ANGKA SITASI
+                    // ==========================================
+                    const citations = item.citation_count || 0;
+
+                    // Desain card diubah sedikit agar sitasi ada di kanan atas
                     const card = `
                         <div class="result-card">
-                            <a href="/document/${item.document_number}" class="doc-title">${item.title}</a>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <a href="/document/${item.document_number}" class="doc-title">${item.title}</a>
+                                
+                                <div class="ms-3 flex-shrink-0">
+                                    <span class="badge rounded-pill bg-white text-primary border border-primary px-2 py-1 shadow-sm" title="Data from Crossref">
+                                        <i class="bi bi-chat-quote-fill me-1"></i> Cited by ${citations}
+                                    </span>
+                                </div>
+                            </div>
+
                             <div class="doc-authors mt-1">${authorText}</div>
-                            <div class="doc-abstract">${shortAbstract}</div>
-                            <div class="doc-meta">
+                            <div class="doc-abstract mt-2">${shortAbstract}</div>
+                            <div class="doc-meta mt-3">
                                 <span class="badge bg-secondary rounded-pill">${item.document_type || 'Journal'}</span>
                                 <span class="ms-2">Pub Year: ${item.pub_year || 'N/A'}</span>
                                 <span class="ms-2">| ID: ${item.document_number}</span>
                                 <span class="ms-2">${doiHtml}</span>
-                                <span class="ms-2">${keywordsHtml}</span>
+                                <span class="ms-2 d-block mt-2">${keywordsHtml}</span>
                             </div>
                         </div>
                     `;

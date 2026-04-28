@@ -29,6 +29,7 @@ return new class extends Migration
             
             // Ekstraksi Sistem
             $table->string('doi')->nullable();
+            $table->integer('citation_count')->default(0);
             $table->boolean('is_verified')->default(false);
             $table->string('verification_token')->nullable();
 
