@@ -135,7 +135,7 @@
                         </div>
                     </a>
                     @empty
-                    <div class="list-group-item p-4 text-center text-muted small">Belum ada data sitasi.</div>
+                    <div class="list-group-item p-4 text-center text-muted small">No most cited documents found yet.</div>
                     @endforelse
                 </div>
             </div>
