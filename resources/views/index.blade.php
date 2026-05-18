@@ -171,7 +171,7 @@
                             </a>
                             @empty
                             <div class="list-group-item p-4 text-center text-muted">
-                                Belum ada data popular.
+                                No popular documents found yet.
                             </div>
                             @endforelse
                         </div>

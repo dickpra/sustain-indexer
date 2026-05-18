@@ -112,7 +112,7 @@
                         </div>
                     </a>
                     @empty
-                    <div class="list-group-item p-4 text-center text-muted small">Belum ada data popular.</div>
+                    <div class="list-group-item p-4 text-center text-muted small">No popular documents found yet.</div>
                     @endforelse
                 </div>
             </div>
