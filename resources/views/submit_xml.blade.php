@@ -56,13 +56,13 @@
 
             <div class="card rounded-0 border-0" style="background-color: #f9f9f9; border: 1px dashed #999 !important;">
                 <div class="card-body p-5 text-center">
-                    <form action="/submit-xml/scan" method="POST" enctype="multipart/form-data">
+                    <form id="xmlScanForm" action="/submit-xml/scan" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="mb-4 mx-auto" style="max-width: 500px;">
-                            <label class="form-label fw-bold mb-3">Choose file XML (.xml) <span class="text-danger">*</span> <small class="text-muted">Accepted file types: XML</small></label>
+                            <label class="form-label fw-bold mb-3">Choose file XML (.xml) <span class="text-danger">*</span> <small class="text-muted">Accepted file types: XML, ZIP</small></label>
                             <input class="form-control form-control-lg rounded-0" type="file" name="ojs_xml" accept=".xml" required>
                         </div>
-                        <button type="submit" class="btn btn-academic btn-lg mt-2">
+                        <button id="btnScanSubmit" type="submit" class="btn btn-academic btn-lg mt-2">
                             <i class="bi bi-search me-2"></i>Scan Document &rarr;
                         </button>
                     </form>
@@ -180,7 +180,29 @@
         </div>
     </div>
 </div>
+<div id="loadingOverlay" class="d-none" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.85); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(4px);">
+    <div class="spinner-border text-primary mb-3" style="width: 4rem; height: 4rem; border-width: 0.3em;" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <h3 style="font-family: 'Georgia', serif; color: #003366; font-weight: bold;">Scanning XML Data...</h3>
+    <p class="text-muted fw-bold">Please wait, extracting authors and metadata.</p>
+</div>
 
+<script>
+    const scanForm = document.getElementById('xmlScanForm');
+    
+    if(scanForm) {
+        scanForm.addEventListener('submit', function(e) {
+            // 1. Munculkan Layar Loading Full Screen
+            document.getElementById('loadingOverlay').classList.remove('d-none');
+            
+            // 2. Kunci Tombol Submit biar gak di-spam klik
+            const btnSubmit = document.getElementById('btnScanSubmit');
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...';
+        });
+    }
+</script>
 </body>
 @include('partials.footer')
 </html>
