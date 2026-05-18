@@ -5,75 +5,145 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SustaIndex - Academic Index</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
     <style>
-        /* ================= RESPONSIVE KHUSUS HOME (MOBILE) ================= */
-        @media (max-width: 768px) {
-            /* Mengecilkan Logo Raksasa */
-            .brand-logo { font-size: 2.8rem; margin-bottom: 20px; text-align: center; }
-            
-            /* Mengatur menu pojok kanan atas agar ketengah dan tidak melayang berantakan */
-            .nav-top { position: static; margin-top: 20px; margin-bottom: 30px; text-align: center; width: 100%; }
-            .nav-top a { display: inline-block; padding: 8px 20px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 20px; }
-            
-            /* Memperbaiki Kotak Pencarian */
-            .search-box { padding: 0 15px; }
-            .search-input { font-size: 1rem; padding: 12px 20px; }
-            
-            /* Membuat tombol Search & Submit sejajar atas bawah dan full width */
-            .btn-action { display: block; width: 100%; margin: 10px 0; }
-        }
-        /* --- HEADER & FOOTER SustaIndex --- */
-        .academic-header { background-color: #003366; color: white; padding: 15px 0; border-bottom: 4px solid #cc0000; }
-        .academic-header a { color: white; text-decoration: none; }
-        .academic-title { font-family: 'Georgia', serif; font-size: 1.8rem; font-weight: normal; margin: 0; }
+        /* Base Styling */
+        body { background-color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
+        .main-wrapper { flex: 1; } /* Memastikan footer selalu di bawah */
         
-        /* Menu Navigasi Kanan */
-        .academic-nav a { font-size: 0.95rem; font-weight: bold; margin-left: 25px; color: #e0e0e0; padding-bottom: 5px; border-bottom: 2px solid transparent; transition: 0.2s; }
-        .academic-nav a:hover, .academic-nav a.active { color: white; border-bottom: 2px solid #cc0000; }
-
-        /* Footer */
-        .academic-footer { background-color: #f1f3f5; color: #444; border-top: 1px solid #d5d5d5; padding: 40px 0 20px 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin-top: 60px; }
+        /* Navigasi Atas */
+        .nav-top { position: absolute; top: 20px; right: 30px; }
+        
+        /* Area Pencarian Utama */
+        .search-section { padding: 100px 0 40px 0; text-align: center; }
+        .brand-logo { font-size: 4.5rem; font-weight: 800; color: #0d6efd; letter-spacing: -1.5px; margin-bottom: 30px; }
+        .brand-logo span { color: #333; }
+        .search-box { width: 100%; max-width: 650px; margin: 0 auto; position: relative; }
+        .search-input { border-radius: 30px; padding: 15px 25px; font-size: 1.1rem; box-shadow: 0 1px 6px rgba(32,33,36,.28); border: 1px solid #dfe1e5; transition: 0.2s; }
+        .search-input:hover, .search-input:focus { box-shadow: 0 1px 8px rgba(32,33,36,.4); outline: none; border-color: rgba(223,225,229,0); }
+        .btn-action { margin: 15px 8px; padding: 10px 25px; border-radius: 4px; font-weight: 500; }
+        
+        /* Footer SustaIndex */
+        .academic-footer { background-color: #f1f3f5; color: #444; border-top: 1px solid #d5d5d5; padding: 40px 0 20px 0; margin-top: 50px; }
         .academic-footer a { color: #003366; text-decoration: none; font-weight: 500; }
         .academic-footer a:hover { text-decoration: underline; }
         .footer-logo { font-family: 'Georgia', serif; font-size: 1.4rem; font-weight: bold; color: #003366; }
-        body { background-color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .center-wrapper { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .brand-logo { font-size: 4.5rem; font-weight: 800; color: #0d6efd; letter-spacing: -1.5px; margin-bottom: 30px; }
-        .brand-logo span { color: #333; }
-        .search-box { width: 100%; max-width: 650px; position: relative; }
-        .search-input { border-radius: 30px; padding: 15px 25px; font-size: 1.1rem; box-shadow: 0 1px 6px rgba(32,33,36,.28); border: 1px solid #dfe1e5; transition: 0.2s; }
-        .search-input:hover, .search-input:focus { box-shadow: 0 1px 8px rgba(32,33,36,.4); outline: none; border-color: rgba(223,225,229,0); }
-        .btn-action { margin: 25px 10px; padding: 10px 25px; border-radius: 4px; font-weight: 500; }
-        .nav-top { position: absolute; top: 20px; right: 30px; }
+
+        /* ================= RESPONSIVE (MOBILE FIX) ================= */
+        @media (max-width: 768px) {
+            .nav-top { position: static; text-align: center; padding-top: 20px; margin-bottom: 10px; }
+            .nav-top a { display: inline-block; padding: 8px 20px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 20px; }
+            .search-section { padding: 20px 0; }
+            .brand-logo { font-size: 3rem; margin-bottom: 20px; }
+            .search-box { padding: 0 20px; }
+            .search-input { font-size: 1rem; padding: 12px 20px; }
+            /* Tombol turun ke bawah (stack) di HP */
+            .btn-action { display: block; width: calc(100% - 40px); margin: 10px auto; }
+            /* Jarak Papan Klasemen di HP */
+            .stats-container { margin-top: 30px !important; }
+            .stats-col { margin-bottom: 30px; }
+            .academic-footer .text-md-end { text-align: left !important; margin-top: 20px; }
+        }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
 
-<div class="nav-top">
-    <a href="/submit" class="text-decoration-none text-dark fw-bold">Submit Document</a>
-</div>
+<div class="main-wrapper">
 
-<div class="container center-wrapper">
-    <div class="brand-logo">📚SustaIndex<span>Search</span></div>
-    
-    <div class="search-box">
-        <form action="/results" method="GET">
-            <input type="text" name="q" class="form-control search-input" placeholder="Search by title, author, abstract, or ID..." autocomplete="off" autofocus required>
+    <div class="nav-top dropdown">
+        <a href="#" class="dropdown-toggle text-decoration-none d-flex align-items-center" data-bs-toggle="dropdown" aria-expanded="false" style="padding-bottom: 5px;">
+                Submit Document
+            </a>
             
-            <div class="text-center mt-4">
-                <button type="submit" class="btn btn-light border btn-action">Search Database</button>
-                <a href="/submit" class="btn btn-light border btn-action">Submit to Index</a>
-            </div>
-        </form>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-3" style="border-top: 3px solid #003366 !important; min-width: 200px;">
+                <li>
+                    <a class="dropdown-item py-2 fw-medium text-dark" href="/submit" style="margin-left: 0; border: none;">
+                        <i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>Upload PDF
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item py-2 fw-medium text-dark" href="/submit-xml" style="margin-left: 0; border: none;">
+                        <i class="bi bi-filetype-xml text-success me-2"></i>Upload OJS XML
+                    </a>
+                </li>
+            </ul>
     </div>
-    
-    <div class="mt-5 text-muted small">
-        <p>A Peer-Reviewed Academic Indexing System</p>
-    </div>
-</div>
 
-</body>
-<footer class="academic-footer">
+    <div class="container search-section">
+        <div class="brand-logo">📚SustaIndex<span>Search</span></div>
+        
+        <div class="search-box">
+            <form action="/results" method="GET">
+                <input type="text" name="q" class="form-control search-input" placeholder="Search by title, author, abstract, or ID..." autocomplete="off" autofocus required>
+                
+                <div class="text-center mt-3">
+                    <button type="submit" class="btn btn-light border btn-action text-dark">Search Database</button>
+                    <a href="/submit" class="btn btn-light border btn-action text-dark">Submit to Index</a>
+                </div>
+            </form>
+        </div>
+        
+        <div class="mt-4 text-muted small">
+            <p>A Peer-Reviewed Academic Indexing System</p>
+        </div>
+    </div>
+
+    <div class="container stats-container" style="margin-top: 50px; margin-bottom: 50px;">
+        <div class="row justify-content-center text-start">
+            
+            <div class="col-md-5 pe-md-3 stats-col">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-fire text-danger fs-5 me-2"></i>
+                    <h5 class="fw-bold text-dark mb-0">Most Popular</h5>
+                </div>
+                
+                <div class="list-group list-group-flush shadow-sm rounded border">
+                    @forelse($mostPopular as $doc)
+                    <a href="/document/{{ $doc->document_number }}" class="list-group-item list-group-item-action p-3">
+                        <h6 class="mb-1 fw-bold text-primary" style="font-size: 0.95rem; line-height: 1.4;">{{ $doc->title }}</h6>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <small class="text-muted" style="font-size: 0.8rem;">{{ $doc->document_type ?: 'Journal' }}</small>
+                            <span class="badge bg-light text-dark border rounded-pill" style="font-size: 0.75rem;">
+                                <i class="bi bi-eye me-1"></i>{{ number_format($doc->views) }} Views
+                            </span>
+                        </div>
+                    </a>
+                    @empty
+                    <div class="list-group-item p-4 text-center text-muted small">Belum ada data popular.</div>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="col-md-5 ps-md-3 stats-col">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-trophy-fill text-warning fs-5 me-2"></i>
+                    <h5 class="fw-bold text-dark mb-0">Most Cited</h5>
+                </div>
+                
+                <div class="list-group list-group-flush shadow-sm rounded border">
+                    @forelse($mostCited as $doc)
+                    <a href="/document/{{ $doc->document_number }}" class="list-group-item list-group-item-action p-3">
+                        <h6 class="mb-1 fw-bold text-primary" style="font-size: 0.95rem; line-height: 1.4;">{{ $doc->title }}</h6>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <small class="text-muted" style="font-size: 0.8rem;">{{ $doc->document_type ?: 'Journal' }}</small>
+                            <span class="badge bg-primary rounded-pill" style="font-size: 0.75rem;">
+                                <i class="bi bi-chat-quote-fill me-1"></i>{{ number_format($doc->citation_count) }} Citations
+                            </span>
+                        </div>
+                    </a>
+                    @empty
+                    <div class="list-group-item p-4 text-center text-muted small">Belum ada data sitasi.</div>
+                    @endforelse
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div> <footer class="academic-footer">
     <div class="container">
         <div class="row">
             <div class="col-md-6 mb-4">
@@ -98,4 +168,6 @@
         </div>
     </div>
 </footer>
+
+</body>
 </html>

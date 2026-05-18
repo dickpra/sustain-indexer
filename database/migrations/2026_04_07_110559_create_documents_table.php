@@ -33,6 +33,8 @@ return new class extends Migration
             $table->boolean('is_verified')->default(false);
             $table->string('verification_token')->nullable();
 
+            $table->unsignedInteger('views')->default(0);
+
             $table->timestamps();
         });
     }

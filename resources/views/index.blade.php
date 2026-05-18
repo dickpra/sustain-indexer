@@ -147,6 +147,66 @@
                 <ul id="paginationContainer" class="pagination justify-content-center"></ul>
             </nav>
 
+            <div id="dashboardStats" class="container my-5 pt-5 border-top">
+                <div class="row g-4">
+                    
+                    <div class="col-md-6 pe-md-4">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="bg-danger bg-opacity-10 p-2 rounded me-3">
+                                <i class="bi bi-fire text-danger fs-4"></i>
+                            </div>
+                            <h4 class="fw-bold text-dark mb-0">Most Popular</h4>
+                        </div>
+                        
+                        <div class="list-group list-group-flush shadow-sm rounded border">
+                            @forelse($mostPopular as $doc)
+                            <a href="/document/{{ $doc->document_number }}" class="list-group-item list-group-item-action p-3">
+                                <h6 class="mb-1 fw-bold" style="color: #003366; line-height: 1.4;">{{ $doc->title }}</h6>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <small class="text-muted">{{ $doc->document_type ?: 'Journal' }} • {{ $doc->pub_year ?: 'N/A' }}</small>
+                                    <span class="badge bg-light text-dark border rounded-pill">
+                                        <i class="bi bi-eye me-1"></i>{{ number_format($doc->views) }} Views
+                                    </span>
+                                </div>
+                            </a>
+                            @empty
+                            <div class="list-group-item p-4 text-center text-muted">
+                                Belum ada data popular.
+                            </div>
+                            @endforelse
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 ps-md-4">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="bg-warning bg-opacity-10 p-2 rounded me-3">
+                                <i class="bi bi-trophy-fill text-warning fs-4"></i>
+                            </div>
+                            <h4 class="fw-bold text-dark mb-0">Most Cited</h4>
+                        </div>
+                        
+                        <div class="list-group list-group-flush shadow-sm rounded border">
+                            @forelse($mostCited as $doc)
+                            <a href="/document/{{ $doc->document_number }}" class="list-group-item list-group-item-action p-3">
+                                <h6 class="mb-1 fw-bold" style="color: #003366; line-height: 1.4;">{{ $doc->title }}</h6>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <small class="text-muted">{{ $doc->document_type ?: 'Journal' }} • {{ $doc->pub_year ?: 'N/A' }}</small>
+                                    <span class="badge rounded-pill bg-primary">
+                                        <i class="bi bi-chat-quote-fill me-1"></i>{{ number_format($doc->citation_count) }} Citations
+                                    </span>
+                                </div>
+                            </a>
+                            @empty
+                            <div class="list-group-item p-4 text-center text-muted">
+                                Belum ada data sitasi.
+                            </div>
+                            @endforelse
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -229,19 +289,29 @@
                     : `Showing ${data.length} of ${paginator.total} documents ${filterText}`;
 
                 // ==============================================
-                // LOGIKA UI CERDAS: JIKA KOSONG VS ADA DATA
+                // LOGIKA UI CERDAS: DASHBOARD VS PENCARIAN
                 // ==============================================
-                if (data.length === 0) {
-                    // Sembunyikan sidebar, perlebar layar, tampilkan Tips
+                const dashboardStats = document.getElementById('dashboardStats');
+                
+                // KONDISI 1: User belum mencari apa-apa (Halaman Utama)
+                if (query === '' && !activeFilters.type && !activeFilters.year && !activeFilters.author) {
+                    emptyState.classList.add('d-none');
+                    if (dashboardStats) dashboardStats.classList.remove('d-none'); // TETAP MUNCUL
+                } 
+                // KONDISI 2: User mencari, tapi HASILNYA KOSONG
+                else if (data.length === 0) {
                     filterSidebar.classList.add('d-none');
                     mainContentColumn.classList.replace('col-md-9', 'col-md-12');
-                    emptyState.classList.remove('d-none');
-                    return; // Stop di sini
-                } else {
-                    // Tampilkan kembali sidebar, normalkan lebar layar, sembunyikan Tips
+                    emptyState.classList.remove('d-none'); // Munculkan Tips No Result
+                    if (dashboardStats) dashboardStats.classList.remove('d-none'); // TETAP MUNCUL sebagai rekomendasi!
+                    return; // Stop render list
+                } 
+                // KONDISI 3: User mencari dan ADA HASILNYA
+                else {
                     filterSidebar.classList.remove('d-none');
                     mainContentColumn.classList.replace('col-md-12', 'col-md-9');
                     emptyState.classList.add('d-none');
+                    if (dashboardStats) dashboardStats.classList.remove('d-none'); // TETAP MUNCUL di bawah hasil search
                 }
 
                 // Render Card Jurnal
@@ -436,7 +506,6 @@
         });
     });
 </script>
-
 @include('partials.footer')
 </body>
 </html>

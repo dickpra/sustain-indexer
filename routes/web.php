@@ -14,7 +14,17 @@ use App\Http\Controllers\DocumentController;
 */
 
 Route::get('/', function () {
-    return view('home');
+    $mostCited = \App\Models\Document::where('is_verified', true)
+                 ->orderBy('citation_count', 'desc')
+                 ->take(3)
+                 ->get();
+
+    $mostPopular = \App\Models\Document::where('is_verified', true)
+                   ->orderBy('views', 'desc')
+                   ->take(3)
+                   ->get();
+
+    return view('home', compact('mostCited', 'mostPopular')); // Sesuaikan 'welcome' dengan nama blade-mu
 });
 
 // Halaman Hasil Pencarian (yang ada filternya)
@@ -46,3 +56,15 @@ Route::get('/api/institutions', [\App\Http\Controllers\DocumentController::class
 Route::get('/author/{id}', [App\Http\Controllers\DocumentController::class, 'showAuthor']);
 
 Route::get('/institution/{id}', [App\Http\Controllers\DocumentController::class, 'showInstitution']);
+
+// ==========================================
+// RUTE SUBMIT OJS XML (Sistem Baru Terpisah)
+// ==========================================
+// Halaman form upload & review XML
+Route::get('/submit-xml', [\App\Http\Controllers\DocumentController::class, 'createXml']); 
+
+// Proses bedah/scan file XML (Preview)
+Route::post('/submit-xml/scan', [\App\Http\Controllers\DocumentController::class, 'scanXml']); 
+
+// Proses simpan final ke database
+Route::post('/submit-xml/save', [\App\Http\Controllers\DocumentController::class, 'storeXmlFinal']);

@@ -256,13 +256,16 @@ class DocumentController extends Controller
     // ==========================================
     public function index()
     {
-        $docTypes = Document::where('is_verified', true)
-                        ->select('document_type', DB::raw('count(*) as total'))
+        // ==========================================
+        // 1. DATA SIDEBAR: TIPE DOKUMEN
+        // ==========================================
+        $docTypes = \App\Models\Document::where('is_verified', true)
+                        ->select('document_type', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
                         ->groupBy('document_type')
                         ->get();
 
         // ==========================================
-        // FITUR BARU: STATISTIK TAHUN ALA GOOGLE SCHOLAR
+        // 2. DATA SIDEBAR: STATISTIK TAHUN ALA SCHOLAR
         // ==========================================
         $currentYear = date('Y');
         
@@ -283,8 +286,23 @@ class DocumentController extends Controller
             'count_20' => \App\Models\Document::where('is_verified', true)->where('pub_year', '>=', $currentYear - 19)->count(),
         ];
 
-        // Jangan lupa kirim variabel $yearStats ke view!
-        return view('index', compact('docTypes', 'yearStats'));
+        // ==========================================
+        // 3. FITUR BARU: MOST CITED & MOST POPULAR
+        // ==========================================
+        $mostCited = \App\Models\Document::where('is_verified', true)
+                     ->orderBy('citation_count', 'desc')
+                     ->take(3)
+                     ->get();
+
+        $mostPopular = \App\Models\Document::where('is_verified', true)
+                       ->orderBy('views', 'desc')
+                       ->take(3)
+                       ->get();
+
+        // ==========================================
+        // 4. LEMPAR SEMUA VARIABEL KE VIEW INDEX
+        // ==========================================
+        return view('index', compact('docTypes', 'yearStats', 'mostCited', 'mostPopular'));
     }
 
     // ==========================================
@@ -372,6 +390,12 @@ class DocumentController extends Controller
     {
         // 1. Tarik dokumennya saja
         $document = Document::where('document_number', $id)->firstOrFail();
+
+        // ==========================================
+        // 🔥 FITUR BARU: RADAR PENONTON
+        // Setiap kali dokumen ini ditemukan, tambah views-nya 1!
+        // ==========================================
+        $document->increment('views');
 
         // 2. PAKSA tarik relasi author + kampusnya menggunakan METHOD (Pasti dapet Collection, gak mungkin null)
         $authors = $document->authors()->with('institution')->get();
@@ -483,5 +507,243 @@ class DocumentController extends Controller
 
         // Lempar ke tampilan HTML
         return view('institution_profile', compact('institution', 'totalDocuments'));
+    }
+
+
+    // ==========================================
+    // 1. Tampilkan Halaman Awal Form XML
+    // ==========================================
+    public function createXml()
+    {
+        return view('submit_xml');
+    }
+
+    // ==========================================
+    // 2. Proses Pindai (Scan) XML & Lempar ke Form Review
+    // ==========================================
+    public function scanXml(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'ojs_xml' => 'required|file|mimes:xml|max:10240',
+        ]);
+
+        $xmlString = file_get_contents($request->file('ojs_xml')->getRealPath());
+        
+        // Bersihkan Namespace
+        $xmlString = preg_replace('/xmlns[^=]*="[^"]*"/i', '', $xmlString);
+        $xmlString = preg_replace('/[a-zA-Z]+:([a-zA-Z]+[=>])/', '$1', $xmlString);
+        $xml = simplexml_load_string($xmlString);
+        
+        $articles = $xml->xpath('//record | //article');
+
+        if (!$articles) {
+            return back()->with('error', 'Format XML tidak dikenali. Pastikan file menggunakan standar OJS atau DOAJ.');
+        }
+
+        $article = $articles[0]; 
+        $title = (string) $article->title;
+
+        // =======================================================
+        // 🔥 DETEKSI DINI: CEK DUPLIKASI JUDUL SAAT BARU SCAN XML
+        // =======================================================
+        $existingDoc = Document::where('title', $title)->first();
+
+        if ($existingDoc) {
+            if (!$existingDoc->is_verified) {
+                // KONDISI 1: Belum Verifikasi -> Oper ke halaman receipt-nya langsung
+                return redirect('/receipt/' . $existingDoc->document_number)
+                    ->with('error', 'This document title has already been submitted and is awaiting email verification. We have redirected you to its receipt page.');
+            } else {
+                // KONDISI 2: Sudah Terindeks -> Blokir total!
+                return back()->with('error', 'System Rejection: Document with title "' . $title . '" has already been officially indexed in our database.');
+            }
+        }
+        // =======================================================
+        
+        // Ekstrak DOI 
+        $doi = '';
+        if (isset($article->doi)) {
+            $doi = (string) $article->doi;
+        } elseif (isset($article->id)) {
+            foreach ($article->id as $idNode) {
+                if ((string)$idNode['type'] == 'doi') {
+                    $doi = (string) $idNode;
+                    break;
+                }
+            }
+        }
+
+        // Ekstrak Tahun Terbit
+        $pubYear = date('Y');
+        if (isset($article->publicationDate)) {
+            $pubYear = date('Y', strtotime((string)$article->publicationDate));
+        } elseif (isset($article->date_published)) {
+            $pubYear = date('Y', strtotime((string)$article->date_published));
+        }
+
+        // Mapping Afiliasi/Kampus ala DOAJ
+        $affiliations = [];
+        if (isset($article->affiliationsList->affiliationName)) {
+            foreach ($article->affiliationsList->affiliationName as $affil) {
+                $id = (string) $affil['affiliationId'];
+                $affiliations[$id] = (string) $affil;
+            }
+        }
+
+        // Ekstrak Authors
+        $authorsList = [];
+        if (isset($article->authors->author)) {
+            foreach ($article->authors->author as $authorNode) {
+                if (isset($authorNode->name)) {
+                    $name = (string) $authorNode->name;
+                } else {
+                    $name = trim((string)$authorNode->givenname . ' ' . (string)$authorNode->familyname);
+                }
+
+                $email = isset($authorNode->email) ? (string) $authorNode->email : '';
+
+                $institution = '';
+                if (isset($authorNode->affiliationId)) {
+                    $affilId = (string) $authorNode->affiliationId;
+                    $institution = $affiliations[$affilId] ?? '';
+                } elseif (isset($authorNode->affiliation)) {
+                    $institution = (string) $authorNode->affiliation;
+                }
+
+                $authorsList[] = [
+                    'name' => $name,
+                    'email' => $email,
+                    'institution' => $institution,
+                    'country' => (string) ($authorNode->country ?? 'Unknown')
+                ];
+            }
+        }
+
+        // Ekstrak Keywords
+        $keywordsArr = [];
+        if (isset($article->keywords->keyword)) {
+            foreach ($article->keywords->keyword as $kw) {
+                $keywordsArr[] = (string) $kw;
+            }
+        }
+        $keywords = implode(', ', $keywordsArr);
+
+        // Hitung Total Halaman
+        $pages = '';
+        if (isset($article->startPage) && isset($article->endPage)) {
+            $start = (int) $article->startPage;
+            $end = (int) $article->endPage;
+            if ($end >= $start) {
+                $pages = ($end - $start) + 1;
+            }
+        }
+
+        $extractedData = [
+            'title' => $title,
+            'abstract' => (string) $article->abstract,
+            'doi' => $doi,
+            'pub_year' => $pubYear,
+            'authors' => $authorsList,
+            'keywords' => $keywords,
+            'pages' => $pages
+        ];
+
+        return view('submit_xml', compact('extractedData'));
+    }
+
+    // ==========================================
+    // 3. Simpan Final ke Database (Setelah User Klik Save)
+    // ==========================================
+    public function storeXmlFinal(\Illuminate\Http\Request $request)
+    {
+        // 1. Validasi input
+        $request->validate([
+            'title' => 'required|string',
+            'abstract' => 'required|string',
+            'document_type' => 'required|string',
+            'submitter_first_name' => 'required|string',
+            'submitter_last_name' => 'required|string',
+            'submitter_email' => 'required|email',
+            'authors' => 'required|array|min:1',
+            'authors.*.name' => 'required|string',
+            'authors.*.email' => 'required|email',
+        ]);
+
+        // ==========================================
+        // 🔥 BENTENG FINAL: CEK DUPLIKASI JUDUL SEBELUM SIMPAN DB
+        // ==========================================
+        $existingDoc = Document::where('title', $request->title)->first();
+
+        if ($existingDoc) {
+            if (!$existingDoc->is_verified) {
+                // KONDISI 1: Belum Verifikasi -> Kirim ke receipt
+                return redirect('/receipt/' . $existingDoc->document_number)
+                    ->with('error', 'This document title has already been submitted and is awaiting email verification.');
+            } else {
+                // KONDISI 2: Sudah Terindeks -> Tolak dan balikkan ke form beserta inputannya
+                return back()
+                    ->withInput()
+                    ->with('error', 'System Rejection: Document with title "' . $request->title . '" has already been officially indexed in our database.');
+            }
+        }
+        // ==========================================
+
+        // 2. Simpan ke Tabel Documents
+        $document = \App\Models\Document::create([
+            'document_number' => 'OJS-' . strtoupper(uniqid()),
+            'title' => $request->title,
+            'abstract' => $request->abstract,
+            'document_type' => $request->document_type, 
+            'pub_year' => $request->pub_year,
+            'doi' => $request->doi,
+            'keywords' => $request->keywords, 
+            'pages' => $request->pages, 
+            'reference_count' => $request->reference_count, 
+            'is_verified' => false, 
+            'views' => 0,
+            'citation_count' => 0,
+            'submitter_first_name' => $request->submitter_first_name,
+            'submitter_last_name' => $request->submitter_last_name,
+            'submitter_email' => $request->submitter_email,
+            'verification_token' => \Illuminate\Support\Str::random(40),
+        ]);
+
+        // 3. Simpan Authors & Institusi (Pivot Table)
+        if ($request->has('authors')) {
+            $authorIdsToAttach = [];
+
+            foreach ($request->authors as $authorData) {
+                $institutionId = null;
+                
+                if (!empty($authorData['institution'])) {
+                    $institution = \App\Models\Institution::firstOrCreate(
+                        ['name' => $authorData['institution']],
+                        ['country' => $authorData['country'] ?? 'Unknown']
+                    );
+                    $institutionId = $institution->id;
+                }
+
+                $author = \App\Models\Author::firstOrCreate(
+                    ['email' => $authorData['email']], 
+                    [
+                        'name' => $authorData['name'],
+                        'institution_id' => $institutionId,
+                        'country' => $authorData['country'] ?? 'Unknown',
+                    ]
+                );
+
+                $authorIdsToAttach[] = $author->id; 
+            }
+
+            $document->authors()->attach($authorIdsToAttach);
+        }
+
+        // Kirim Email Verifikasi
+        dispatch(function () use ($document) {
+            \Illuminate\Support\Facades\Mail::to($document->submitter_email)
+                ->send(new \App\Mail\VerifyDocumentEmail($document));
+        })->afterResponse();
+
+        return redirect('/receipt/' . $document->document_number)->with('success', 'XML data saved! Please check your email to verify and activate the index.');
     }
 }
