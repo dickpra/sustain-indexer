@@ -672,21 +672,53 @@ class DocumentController extends Controller
         // ==========================================
         // 🔥 BENTENG FINAL: CEK DUPLIKASI JUDUL SEBELUM SIMPAN DB
         // ==========================================
-        $existingDoc = Document::where('title', $request->title)->first();
+        $existingDoc = \App\Models\Document::where('title', $request->title)->first();
 
         if ($existingDoc) {
             if (!$existingDoc->is_verified) {
-                // KONDISI 1: Belum Verifikasi -> Kirim ke receipt
                 return redirect('/receipt/' . $existingDoc->document_number)
                     ->with('error', 'This document title has already been submitted and is awaiting email verification.');
             } else {
-                // KONDISI 2: Sudah Terindeks -> Tolak dan balikkan ke form beserta inputannya
                 return back()
                     ->withInput()
                     ->with('error', 'System Rejection: Document with title "' . $request->title . '" has already been officially indexed in our database.');
             }
         }
-        // ==========================================
+
+        // =======================================================
+        // 🔥 FITUR BARU: AUTO-FORMAT DOI & FETCH SITASI CROSSREF
+        // =======================================================
+        $finalDoi = null;
+        $citationCount = 0; // Default 0
+
+        if (!empty($request->doi)) {
+            $inputDoi = $request->doi;
+            
+            // 1. Pastikan jadi format link URL yang bisa diklik
+            if (!str_starts_with($inputDoi, 'http')) {
+                $finalDoi = 'https://doi.org/' . $inputDoi;
+            } else {
+                $finalDoi = $inputDoi;
+            }
+
+            // 2. Ekstrak kode mentah DOI (10.xxxx/yyyy) untuk nembak API Crossref
+            if (preg_match('/10\.\d{4,9}\/[-._;()\/:A-Z0-9]+/i', $finalDoi, $matches)) {
+                $rawDoi = $matches[0];
+                
+                try {
+                    // Tembak API Crossref dengan timeout 5 detik
+                    $response = \Illuminate\Support\Facades\Http::timeout(5)->get('https://api.crossref.org/works/' . $rawDoi);
+                    
+                    if ($response->successful()) {
+                        // Curi angka sitasinya!
+                        $citationCount = $response->json('message.is-referenced-by-count') ?? 0;
+                    }
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning("Gagal ambil sitasi Crossref XML untuk DOI: " . $rawDoi);
+                }
+            }
+        }
+        // =======================================================
 
         // 2. Simpan ke Tabel Documents
         $document = \App\Models\Document::create([
@@ -695,13 +727,13 @@ class DocumentController extends Controller
             'abstract' => $request->abstract,
             'document_type' => $request->document_type, 
             'pub_year' => $request->pub_year,
-            'doi' => $request->doi,
+            'doi' => $finalDoi, // <-- Pakai DOI yang sudah jadi URL
             'keywords' => $request->keywords, 
             'pages' => $request->pages, 
             'reference_count' => $request->reference_count, 
             'is_verified' => false, 
             'views' => 0,
-            'citation_count' => 0,
+            'citation_count' => $citationCount, // <-- Pakai hasil tembakan Crossref
             'submitter_first_name' => $request->submitter_first_name,
             'submitter_last_name' => $request->submitter_last_name,
             'submitter_email' => $request->submitter_email,
