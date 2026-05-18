@@ -51,7 +51,7 @@
             @if(!isset($extractedData))
             <div class="text-center mb-5 mt-3">
                 <h2 style="font-family: 'Georgia', serif; color: #003366;"><i class="bi bi-filetype-xml text-success me-2"></i>OJS Native XML Upload</h2>
-                <p class="text-muted">Upload file ekspor XML dari Open Journal Systems. Sistem akan otomatis memindai dan mengekstrak metadatanya untuk Anda review.</p>
+                <p class="text-muted">Upload file ekspor XML dari Open Journal Systems. Sistem akan otomatis memindai dan mengekstrak metadatanya untuk Anda review. Jika Anda memiliki file yang sudah di-export, Anda dapat langsung melakukan scan.</p>
             </div>
 
             <div class="card rounded-0 border-0" style="background-color: #f9f9f9; border: 1px dashed #999 !important;">
@@ -59,7 +59,7 @@
                     <form action="/submit-xml/scan" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="mb-4 mx-auto" style="max-width: 500px;">
-                            <label class="form-label fw-bold mb-3">Pilih file XML (.xml) <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold mb-3">Choose file XML (.xml) <span class="text-danger">*</span></label>
                             <input class="form-control form-control-lg rounded-0" type="file" name="ojs_xml" accept=".xml" required>
                         </div>
                         <button type="submit" class="btn btn-academic btn-lg mt-2">
