@@ -82,9 +82,20 @@
                     <div class="section-title">1. Material Information</div>
                     
                     <div class="mb-4">
-                        <label class="form-label">Title <span class="text-danger">*</span></label>
-                        <input type="text" name="title" id="input_title" class="form-control" value="{{ $extractedData['title'] ?? '' }}" required>
+                    <label class="form-label">Title <span class="text-danger">*</span></label>
+                    <input type="text" name="title" id="input_title" class="form-control" value="{{ $extractedData['title'] ?? '' }}" required>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label">Journal Name</label>
+                        <input type="text" name="journal_title" id="input_journal_title" class="form-control" value="{{ $extractedData['journal_title'] ?? '' }}" placeholder="e.g. Journal of Sustainability">
                     </div>
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label">Publisher</label>
+                        <input type="text" name="publisher" id="input_publisher" class="form-control" value="{{ $extractedData['publisher'] ?? '' }}" placeholder="e.g. Universitas Gadjah Mada">
+                    </div>
+                </div>
 
                     <div class="mb-4">
                         <label class="form-label">Abstract <span class="text-danger">*</span></label>
@@ -191,6 +202,7 @@
                         <table class="table table-hover w-100 m-0">
                             <tbody>
                                 <tr><th style="width: 25%; color:#003366;">Document Title</th><td id="rev_title" class="fw-bold"></td></tr>
+                                <tr><th style="color:#003366;">Journal & Publisher</th><td id="rev_journal_publisher"></td></tr>
                                 <tr><th style="color:#003366;">Abstract</th><td id="rev_abstract" style="text-align: justify; font-size: 0.9em; white-space: pre-line;"></td></tr>
                                 <tr><th style="color:#003366;">Keywords</th><td id="rev_keywords"></td></tr>
                                 <tr><th style="color:#003366;">Type & Year</th><td id="rev_type_year"></td></tr>
@@ -248,6 +260,10 @@
 
             // Klon isi dari Input Form (Step 1) ke Tabel Review (Step 2)
             document.getElementById('rev_title').innerText = document.getElementById('input_title').value;
+            const journal = document.getElementById('input_journal_title').value;
+            const publisher = document.getElementById('input_publisher').value;
+            
+            document.getElementById('rev_journal_publisher').innerText = `${journal} (${publisher})`;
             document.getElementById('rev_abstract').innerText = document.getElementById('input_abstract').value;
             document.getElementById('rev_keywords').innerText = document.getElementById('input_keywords').value || '-';
             

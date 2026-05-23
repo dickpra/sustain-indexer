@@ -71,6 +71,14 @@
 
         <div class="col-md-9 ps-md-5">
             <h1 class="doc-title">{{ $document->title }}</h1>
+
+            @if($document->journal_title)
+                <div class="mb-3 p-2 bg-light border-start border-4 border-primary" style="font-size: 1rem;">
+                    <i class="bi bi-journal-bookmark-fill text-primary me-2"></i>Published in: 
+                    <strong>{{ $document->journal_title }}</strong> 
+                    @if($document->publisher) <span class="text-muted">by {{ $document->publisher }}</span> @endif
+                </div>
+            @endif
             
             <div class="doc-authors">
                 @if(count($authors) > 0)

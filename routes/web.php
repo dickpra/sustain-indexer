@@ -68,3 +68,15 @@ Route::post('/submit-xml/scan', [\App\Http\Controllers\DocumentController::class
 
 // Proses simpan final ke database
 Route::post('/submit-xml/save', [\App\Http\Controllers\DocumentController::class, 'storeXmlFinal']);
+
+// ==========================================
+// RUTE EXPERIMENTAL: HYBRID AI PDF SCANNER
+// ==========================================
+Route::get('/submit-beta', [\App\Http\Controllers\BetaSubmitController::class, 'create']);
+Route::post('/submit-beta/scan', [\App\Http\Controllers\BetaSubmitController::class, 'scanPdfHybrid']);
+Route::post('/submit-beta/save', [\App\Http\Controllers\BetaSubmitController::class, 'storeFinal']);
+
+// 🔥 TAMBAHAN BARU: Jaring pengaman kalau Laravel melakukan redirect back()
+Route::get('/submit-beta/scan', function () {
+    return redirect('/submit-beta')->with('error', 'Session expired or validation failed. Please re-upload your PDF.');
+});

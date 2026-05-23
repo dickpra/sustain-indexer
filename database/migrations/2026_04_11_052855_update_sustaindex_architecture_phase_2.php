@@ -39,6 +39,8 @@ return new class extends Migration
         Schema::table('documents', function (Blueprint $table) {
             $table->string('keywords')->nullable()->after('abstract'); // Tambah Keywords
             $table->dropColumn('authors'); // Hapus kolom JSON authors yang lama
+            $table->string('journal_title')->nullable()->after('title');
+            $table->string('publisher')->nullable()->after('journal_title');
         });
     }
 

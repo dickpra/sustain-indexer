@@ -188,6 +188,8 @@ class DocumentController extends Controller
             $document = Document::create([
                 'document_number' => $docNumber,
                 'title' => $request->title,
+                'journal_title' => $request->journal_title, // <-- Tambahan baru
+                'publisher' => $request->publisher,
                 'abstract' => $request->abstract,
                 'keywords' => $request->keywords,
                 'document_type' => $request->document_type,
@@ -638,8 +640,14 @@ class DocumentController extends Controller
             }
         }
 
+        // 🔥 Ekstrak Nama Jurnal dan Penerbit dari XML
+        $journalTitle = isset($article->journalTitle) ? (string) $article->journalTitle : '';
+        $publisher = isset($article->publisher) ? (string) $article->publisher : '';
+
         $extractedData = [
             'title' => $title,
+            'journal_title' => $journalTitle, // Tambahkan ini
+            'publisher' => $publisher,       // Tambahkan ini
             'abstract' => (string) $article->abstract,
             'doi' => $doi,
             'pub_year' => $pubYear,
@@ -724,16 +732,18 @@ class DocumentController extends Controller
         $document = \App\Models\Document::create([
             'document_number' => 'OJS-' . strtoupper(uniqid()),
             'title' => $request->title,
+            'journal_title' => $request->journal_title, // 🔥 SIMPAN NAMA JURNAL
+            'publisher' => $request->publisher,         // 🔥 SIMPAN PENERBIT
             'abstract' => $request->abstract,
             'document_type' => $request->document_type, 
             'pub_year' => $request->pub_year,
-            'doi' => $finalDoi, // <-- Pakai DOI yang sudah jadi URL
+            'doi' => $finalDoi, 
             'keywords' => $request->keywords, 
             'pages' => $request->pages, 
             'reference_count' => $request->reference_count, 
             'is_verified' => false, 
             'views' => 0,
-            'citation_count' => $citationCount, // <-- Pakai hasil tembakan Crossref
+            'citation_count' => $citationCount,
             'submitter_first_name' => $request->submitter_first_name,
             'submitter_last_name' => $request->submitter_last_name,
             'submitter_email' => $request->submitter_email,

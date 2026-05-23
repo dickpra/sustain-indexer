@@ -19,6 +19,12 @@
                         <i class="bi bi-filetype-xml text-success me-2"></i>Upload OJS XML
                     </a>
                 </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                     <a class="dropdown-item py-2 fw-medium text-dark" href="/submit-beta" style="margin-left: 0; border: none;">
+                        <i class="bi bi-robot text-primary me-2"></i>Upload PDF (Beta)
+                    </a>
+                </li>
             </ul>
         </div>
         

@@ -62,6 +62,18 @@
                         <small class="text-muted">Including capitalization.</small>
                     </div>
 
+                    <div class="row mb-4 bg-light p-3 border">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label class="form-label">Journal / Conference Name (Optional)</label>
+                            <input type="text" name="journal_title" class="form-control" placeholder="e.g. Journal of Sustainability">
+                            <small class="text-muted">Where was this published?</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Publisher (Optional)</label>
+                            <input type="text" name="publisher" class="form-control" placeholder="e.g. Universitas Gadjah Mada">
+                        </div>
+                    </div>
+
                     <div class="mb-4">
                         <label class="form-label">Abstract <span class="text-danger">*</span></label>
                         <textarea name="abstract" class="form-control" rows="5" required></textarea>

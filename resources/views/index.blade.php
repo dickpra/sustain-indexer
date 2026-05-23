@@ -345,6 +345,10 @@
                     const citations = item.citation_count || 0;
 
                     // Desain card diubah sedikit agar sitasi ada di kanan atas
+                    const journalHtml = item.journal_title 
+                        ? `<div class="small text-muted mb-1" style="font-size: 0.9em;"><i class="bi bi-journal-bookmark-fill text-secondary me-1"></i> Published in: <span class="fw-bold text-dark">${item.journal_title}</span> ${item.publisher ? `by ${item.publisher}` : ''}</div>` 
+                        : '';
+
                     const card = `
                         <div class="result-card">
                             <div class="d-flex justify-content-between align-items-start">
@@ -356,6 +360,8 @@
                                     </span>
                                 </div>
                             </div>
+                            
+                            ${journalHtml}
 
                             <div class="doc-authors mt-1">${authorText}</div>
                             <div class="doc-abstract mt-2">${shortAbstract}</div>
