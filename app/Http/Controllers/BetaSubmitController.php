@@ -20,12 +20,6 @@ class BetaSubmitController extends Controller
     }
 
     // ==========================================
-    // THE MAGIC HYBRID SCANNER
-    // ==========================================
-    // ==========================================
-    // THE MAGIC HYBRID SCANNER (ANTI-BIBLIOGRAPHY TRAP)
-    // ==========================================
-    // ==========================================
     // THE MAGIC HYBRID SCANNER (REGEX DOI + AI METADATA)
     // ==========================================
     public function scanPdfHybrid(Request $request)

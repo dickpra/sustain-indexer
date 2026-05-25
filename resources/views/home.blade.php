@@ -89,9 +89,36 @@
             <form action="/results" method="GET">
                 <input type="text" name="q" class="form-control search-input" placeholder="Search by title, author, abstract, or ID..." autocomplete="off" autofocus required>
                 
-                <div class="text-center mt-3">
+                <div class="text-center mt-3 d-inline-block position-relative">
                     <button type="submit" class="btn btn-light border btn-action text-dark">Search Database</button>
-                    <a href="/submit" class="btn btn-light border btn-action text-dark">Submit to Index</a>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-light border btn-action text-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            Submit to Index
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-3" style="border-top: 3px solid #003366 !important; min-width: 200px;">
+                            <li>
+                                <a class="dropdown-item py-2 fw-medium text-dark" href="/submit" style="margin-left: 0; border: none;">
+                                    <i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>Upload PDF
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item py-2 fw-medium text-dark" href="/submit-xml" style="margin-left: 0; border: none;">
+                                    <i class="bi bi-filetype-xml text-success me-2"></i>Upload OJS XML
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item py-2" href="/submit-beta">
+                                    <i class="bi bi-robot text-primary me-2"></i>
+                                    <div>
+                                        <span class="fw-bold d-block">Upload PDF</span>
+                                        <small class="text-muted" style="font-size: 11px;">Automatic extraction using Groq AI & Crossref</small>
+                                    </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </form>
         </div>
@@ -167,8 +194,33 @@
                     <a href="#" class="small me-3">Privacy Policy</a>
                     <a href="#" class="small">Contact Us</a>
                 </div>
-                <div class="mt-3">
-                    <a href="/submit" class="btn btn-sm btn-outline-secondary rounded-0 fw-bold">Index Your Work</a>
+                <div class="mt-3 dropdown d-inline-block">
+                    <button class="btn btn-sm btn-outline-secondary rounded-0 fw-bold dropdown-toggle" type="button" id="footerSubmitDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        Index Your Work
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-3" aria-labelledby="footerSubmitDropdown" style="border-top: 3px solid #003366 !important; min-width: 200px;">
+                        <li>
+                            <a class="dropdown-item py-2 fw-medium text-dark" href="/submit" style="margin-left: 0; border: none;">
+                                <i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>Upload PDF
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item py-2 fw-medium text-dark" href="/submit-xml" style="margin-left: 0; border: none;">
+                                <i class="bi bi-filetype-xml text-success me-2"></i>Upload OJS XML
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item py-2" href="/submit-beta">
+                                <i class="bi bi-robot text-primary me-2"></i>
+                                <div>
+                                    <span class="fw-bold d-block">Upload PDF</span>
+                                    <small class="text-muted" style="font-size: 11px;">Automatic extraction using Groq AI & Crossref</small>
+                                </div>
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>

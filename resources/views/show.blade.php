@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $document->title }} - SustaIndex</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         /* CSS tetap sama seperti milikmu */
         body { background-color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; }
@@ -95,8 +96,14 @@
             <div class="author-institution mt-2 mb-4">
                 @foreach($authors as $author)
                     <div class="text-muted small mb-1">
-                        <sup class="fw-bold">{{ $loop->iteration }}</sup> 
-                        {{ $author->institution ? $author->institution->name : 'Independent Researcher' }} 
+                        <sup class="fw-bold">{{ $loop->iteration }}</sup>
+                        @if($author->institution)
+                            <a href="/institution/{{ $author->institution->id }}" class="text-decoration-none text-secondary">
+                                {{ $author->institution->name }}
+                            </a>
+                        @else
+                            Independent Researcher
+                        @endif
                         @if($author->country) ({{ $author->country }}) @endif
                     </div>
                 @endforeach
