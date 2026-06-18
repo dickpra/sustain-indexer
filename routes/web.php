@@ -76,7 +76,24 @@ Route::get('/submit-beta', [\App\Http\Controllers\BetaSubmitController::class, '
 Route::post('/submit-beta/scan', [\App\Http\Controllers\BetaSubmitController::class, 'scanPdfHybrid']);
 Route::post('/submit-beta/save', [\App\Http\Controllers\BetaSubmitController::class, 'storeFinal']);
 
+// Rute untuk Profil Jurnal/Conference
+Route::get('/journal/{name}', [\App\Http\Controllers\JournalController::class, 'showJournal']);
+
 // 🔥 TAMBAHAN BARU: Jaring pengaman kalau Laravel melakukan redirect back()
 Route::get('/submit-beta/scan', function () {
     return redirect('/submit-beta')->with('error', 'Session expired or validation failed. Please re-upload your PDF.');
 });
+
+// ==========================================
+// RUTE FITUR EDIT DOKUMEN (SECURE SIGNED URL)
+// ==========================================
+// 1. Rute untuk menerima request edit dan mengirim email
+Route::post('/document/{id}/request-edit', [\App\Http\Controllers\DocumentController::class, 'requestEdit']);
+
+// 2. Rute untuk membuka form edit (WAJIB terenkripsi dengan middleware 'signed')
+Route::get('/document/{id}/secure-edit', [\App\Http\Controllers\DocumentController::class, 'editForm'])
+    ->name('document.edit')
+    ->middleware('signed');
+
+// 3. Rute untuk menyimpan hasil edit
+Route::post('/document/{id}/update', [\App\Http\Controllers\DocumentController::class, 'updateDocument']);

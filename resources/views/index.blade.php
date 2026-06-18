@@ -343,11 +343,23 @@
                     // ==========================================
                     // FITUR BARU: AMBIL ANGKA SITASI
                     // ==========================================
-                    const citations = item.citation_count || 0;
+                    // ==========================================
+                    // LINK KE HALAMAN PROFIL JURNAL BARU
+                    // ==========================================
+                    const citations = item.real_citation_count || 0;
 
-                    // Desain card diubah sedikit agar sitasi ada di kanan atas
+                    // Buat URL yang aman (hilangkan spasi jadi %20, dll)
+                    const journalUrl = item.journal_title ? encodeURIComponent(item.journal_title) : '';
+
                     const journalHtml = item.journal_title 
-                        ? `<div class="small text-muted mb-1" style="font-size: 0.9em;"><i class="bi bi-journal-bookmark-fill text-secondary me-1"></i> Published in: <span class="fw-bold text-dark">${item.journal_title}</span> ${item.publisher ? `by ${item.publisher}` : ''}</div>` 
+                        ? `<div class="small text-muted mb-1" style="font-size: 0.9em;">
+                            <i class="bi bi-journal-bookmark-fill text-secondary me-1"></i> Published in: 
+                            <a href="/journal/${journalUrl}" 
+                               class="fw-bold text-decoration-none hover-underline" style="color: #003366;">
+                                ${item.journal_title}
+                            </a> 
+                            ${item.publisher ? `by ${item.publisher}` : ''}
+                           </div>` 
                         : '';
 
                     const card = `

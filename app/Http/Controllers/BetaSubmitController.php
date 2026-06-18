@@ -324,6 +324,18 @@ class BetaSubmitController extends Controller
             'verification_token' => \Illuminate\Support\Str::random(40),
         ]);
 
+        // =========================================================
+        // 🔥 FITUR BARU: LANGSUNG CATAT KE TABEL HISTORY SAAT SUBMIT (VERSI AI)
+        // =========================================================
+        \Illuminate\Support\Facades\DB::table('citation_histories')->insert([
+            'document_id' => $document->id,
+            'citation_count' => $citationCount, // Angka yang didapat AI dari Crossref
+            'year' => date('Y'),
+            'month' => date('m'),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
         // 4. Simpan Authors & Institusi (Pivot Table)
         if ($request->has('authors')) {
             $authorIdsToAttach = [];

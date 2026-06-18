@@ -39,9 +39,18 @@
             <div class="card border-0 shadow-sm mb-4" style="background-color: #f4f8fc; border-left: 4px solid #003366 !important;">
                 <div class="card-body py-3">
                     <div class="text-muted small fw-bold text-uppercase mb-1" style="letter-spacing: 1px;">Citations</div>
+                    @if($latestCitation)
+                        <span class="badge bg-light text-success border border-success px-3 py-2 shadow-sm" title="Automatically tracked by SustainDex Engine">
+                            <i class="bi bi-check-circle-fill me-1"></i> Citation synced {{ \Carbon\Carbon::parse($latestCitation->created_at)->diffForHumans() }}
+                        </span>
+                    @else
+                        <span class="badge bg-light text-secondary border px-3 py-2 shadow-sm" title="Scheduled for weekly sync">
+                            <i class="bi bi-clock-history me-1"></i> Waiting for weekly citation sync...
+                        </span>
+                    @endif
                     <div class="d-flex align-items-center">
                         <i class="bi bi-quote fs-3 text-primary me-2" style="opacity: 0.5;"></i>
-                        <h2 class="fw-bold text-primary mb-0">{{ $document->citation_count ?? 0 }}</h2>
+                        <h2 class="fw-bold text-primary mb-0">{{ $document->real_citation_count ?? 0 }}</h2>
                     </div>
                     <div class="text-muted mt-1" style="font-size: 10px;"><i>Data indexed from Crossref API</i></div>
                 </div>
@@ -73,11 +82,18 @@
         <div class="col-md-9 ps-md-5">
             <h1 class="doc-title">{{ $document->title }}</h1>
 
-            @if($document->journal_title)
+           @if($document->journal_title)
                 <div class="mb-3 p-2 bg-light border-start border-4 border-primary" style="font-size: 1rem;">
-                    <i class="bi bi-journal-bookmark-fill text-primary me-2"></i>Published in: 
-                    <strong>{{ $document->journal_title }}</strong> 
-                    @if($document->publisher) <span class="text-muted">by {{ $document->publisher }}</span> @endif
+                    <i class="bi bi-journal-bookmark-fill text-primary me-2"></i>Published in:
+                    <a href="{{ url('/journal/' . urlencode($document->journal_title)) }}"
+                    class="fw-bold text-decoration-none"
+                    style="color: #003366;">
+                        {{ $document->journal_title }}
+                    </a>
+
+                    @if($document->publisher)
+                        <span class="text-muted">by {{ $document->publisher }}</span>
+                    @endif
                 </div>
             @endif
             
@@ -142,8 +158,65 @@
         </div>
     </div>
 </div>
-
+<div class="text-end mt-5 pt-3 border-top">
+    <button onclick="promptEditRequest('{{ $document->document_number }}')" class="btn btn-sm btn-outline-secondary" style="border-radius: 20px;">
+        <i class="bi bi-pencil-square"></i> Request to Edit Information
+    </button>
+</div>
 @include('partials.footer')
-
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function promptEditRequest(docNumber) {
+        Swal.fire({
+            title: 'Request Edit Access',
+            html: `
+                <p class="text-muted small">To edit typos or update author information, please verify your identity by entering the exact email address used when this document was submitted.</p>
+                <input type="email" id="editEmail" class="form-control text-center" placeholder="Submitter Email Address">
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Verify & Send Edit Link',
+            confirmButtonColor: '#003366',
+            showLoaderOnConfirm: true,
+            preConfirm: () => {
+                const email = document.getElementById('editEmail').value;
+                if (!email) {
+                    Swal.showValidationMessage('Please enter an email address');
+                    return false;
+                }
+                
+                // Tembak API Request Edit
+                return fetch(`/document/${docNumber}/request-edit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ email: email })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.error || 'Verification failed') });
+                    }
+                    return response.json();
+                })
+                .catch(error => {
+                    Swal.showValidationMessage(`❌ ${error.message}`);
+                });
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Link Sent!',
+                    text: 'A secure, encrypted link has been sent to your email. It will expire in 24 hours.',
+                    icon: 'success',
+                    confirmButtonColor: '#003366'
+                });
+            }
+        });
+    }
+</script>
 </body>
 </html>

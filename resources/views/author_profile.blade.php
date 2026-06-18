@@ -108,6 +108,43 @@
     </div>
 </div>
 
+<div class="card rounded-0 border-0 shadow-sm mb-4" style="background-color: #f8f9fa; border-top: 4px solid #003366 !important;">
+    <div class="card-body p-4">
+        <h5 style="font-family: 'Georgia', serif; color: #003366;" class="mb-4">
+            <i class="bi bi-bar-chart-fill me-2 text-primary"></i>Author Impact Metrics
+        </h5>
+        
+        <div class="row text-center">
+            <div class="col-md-6 border-end">
+                <div class="text-muted small fw-bold text-uppercase mb-1">S-Index Score</div>
+                <div class="display-4 fw-bold text-success">
+                    {{ $author->s_index }}
+                </div>
+                <div class="small text-muted mt-2">
+                    Measures productivity, global impact, and sustainability contribution.
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="text-muted small fw-bold text-uppercase mb-1">S-Factor (3-Years)</div>
+                <div class="display-4 fw-bold text-primary">
+                    {{ $author->s_factor }}
+                </div>
+                <div class="small text-muted mt-2">
+                    Citation ratio modified by platform quality parameters.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h6 class="fw-bold text-secondary mb-3">Citations per Year</h6>
+        <canvas id="citationChart" height="100"></canvas>
+    </div>
+</div>
+
 <div class="container mb-5">
     <div class="row justify-content-center">
         <div class="col-md-9">
@@ -132,7 +169,29 @@
 </div>
 
 @include('partials.footer')
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('citationChart').getContext('2d');
+    const citationChart = new Chart(ctx, {
+        type: 'bar', // Google Scholar pakai Bar Chart
+        data: {
+            labels: {!! $chartYears !!}, // Tahun otomatis dari DB
+            datasets: [{
+                label: 'Citations',
+                data: {!! $chartCounts !!}, // Angka otomatis dari DB
+                backgroundColor: '#5A6268', // Warna abu-abu elegan ala Google Scholar
+                barThickness: 30
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                x: { grid: { display: false } }
+            },
+            plugins: { legend: { display: false } } // Sembunyikan legenda biar bersih
+        }
+    });
+</script>
 <script>
     const authorId = {{ $author->id }};
     const resultsContainer = document.getElementById('resultsContainer');
@@ -237,6 +296,5 @@
         fetchDocuments();
     });
 </script>
-
 </body>
 </html>

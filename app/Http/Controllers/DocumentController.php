@@ -205,6 +205,18 @@ class DocumentController extends Controller
                 'is_peer_reviewed' => true, 
             ]);
 
+            // =========================================================
+            // 🔥 FITUR BARU: LANGSUNG CATAT KE TABEL HISTORY SAAT SUBMIT
+            // =========================================================
+            \Illuminate\Support\Facades\DB::table('citation_histories')->insert([
+                'document_id' => $document->id,
+                'citation_count' => $citationCount, // Angka dari Crossref saat scan
+                'year' => date('Y'),
+                'month' => date('m'),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
             // C. RELASI PIVOT: Sambungkan Dokumen dengan Author-Author
             $document->authors()->attach($authorIdsToAttach);
 
@@ -385,7 +397,7 @@ class DocumentController extends Controller
 
         return response()->json($response);
     }
-    // ==========================================
+   // ==========================================
     // 5. Fungsi Halaman Detail (Show)
     // ==========================================
     public function show($id)
@@ -393,17 +405,23 @@ class DocumentController extends Controller
         // 1. Tarik dokumennya saja
         $document = Document::where('document_number', $id)->firstOrFail();
 
-        // ==========================================
-        // 🔥 FITUR BARU: RADAR PENONTON
-        // Setiap kali dokumen ini ditemukan, tambah views-nya 1!
-        // ==========================================
+        // 2. Tambah views
         $document->increment('views');
 
-        // 2. PAKSA tarik relasi author + kampusnya menggunakan METHOD (Pasti dapet Collection, gak mungkin null)
+        // 3. Tarik relasi author
         $authors = $document->authors()->with('institution')->get();
 
-        // 3. Lempar dua-duanya ke view secara terpisah
-        return view('show', compact('document', 'authors'));
+        // ==========================================
+        // 🔥 AMBIL DATA DARI TABEL SITASI BARU
+        // Cari kapan terakhir kali dokumen ini di-sync oleh robot
+        // ==========================================
+        $latestCitation = \Illuminate\Support\Facades\DB::table('citation_histories')
+                            ->where('document_id', $document->id)
+                            ->latest('created_at')
+                            ->first();
+
+        // Lempar semuanya ke view
+        return view('show', compact('document', 'authors', 'latestCitation'));
     }
 
     // ==========================================
@@ -474,8 +492,31 @@ class DocumentController extends Controller
             return response()->json($documents);
         }
 
-        // Kalau yang minta adalah Browser (Loading awal)
-        return view('author_profile', compact('author'));
+        // Ambil ID semua dokumen milik Author ini
+        $documentIds = $author->documents->pluck('id');
+
+        // Cari riwayat sitasi tertinggi per tahun untuk author ini
+        $citationChartData = DB::table('citation_histories')
+            ->select('year', DB::raw('MAX(citation_count) as total_citations'))
+            ->whereIn('document_id', $documentIds)
+            ->groupBy('year')
+            ->orderBy('year', 'asc')
+            ->get();
+
+        // =========================================================
+        // 🔥 JARING PENGAMAN: JIKA TABEL MASIH KOSONG 🔥
+        // =========================================================
+        if ($citationChartData->isEmpty()) {
+            // Beri data dummy 3 tahun terakhir dengan nilai 0
+            $chartYears = json_encode([date('Y') - 2, date('Y') - 1, date('Y')]); 
+            $chartCounts = json_encode([0, 0, 0]);
+        } else {
+            // Kalau sudah ada isinya, pakai data asli
+            $chartYears = $citationChartData->pluck('year')->toJson();
+            $chartCounts = $citationChartData->pluck('total_citations')->toJson();
+        }
+
+        return view('author_profile', compact('author', 'chartYears', 'chartCounts'));
     }
 
     public function showInstitution(Request $request, $id)
@@ -750,6 +791,18 @@ class DocumentController extends Controller
             'verification_token' => \Illuminate\Support\Str::random(40),
         ]);
 
+        // =========================================================
+        // 🔥 FITUR BARU: LANGSUNG CATAT KE TABEL HISTORY SAAT SUBMIT
+        // =========================================================
+        \Illuminate\Support\Facades\DB::table('citation_histories')->insert([
+            'document_id' => $document->id,
+            'citation_count' => $citationCount, // Angka dari Crossref saat scan XML
+            'year' => date('Y'),
+            'month' => date('m'),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
         // 3. Simpan Authors & Institusi (Pivot Table)
         if ($request->has('authors')) {
             $authorIdsToAttach = [];
@@ -787,5 +840,162 @@ class DocumentController extends Controller
         })->afterResponse();
 
         return redirect('/receipt/' . $document->document_number)->with('success', 'XML data saved! Please check your email to verify and activate the index.');
+    }
+
+    // =======================================================
+    // 10. FITUR EDIT: Request & Kirim URL Terenkripsi
+    // =======================================================
+    public function requestEdit(Request $request, $id)
+    {
+        $request->validate(['email' => 'required|email']);
+        
+        $document = Document::where('document_number', $id)->firstOrFail();
+
+        if (strtolower($document->submitter_email) !== strtolower($request->email)) {
+            return response()->json(['error' => 'Authentication failed: Email does not match the original submitter of this document.'], 403);
+        }
+
+        // 🔥 TRIK DEWA: Sisipkan timestamp updated_at ke dalam link
+        $secureEditUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'document.edit', 
+            now()->addHours(24), 
+            [
+                'id' => $document->document_number,
+                'v' => $document->updated_at->timestamp // Kunci gembok sekali pakai
+            ]
+        );
+
+        \Illuminate\Support\Facades\Mail::send([], [], function ($message) use ($document, $secureEditUrl) {
+            $message->to($document->submitter_email)
+                    ->subject('SustaIndex - Secure Document Edit Access')
+                    ->html("
+                        <h3>Secure Edit Request</h3>
+                        <p>Hello,</p>
+                        <p>You have requested to edit the metadata for the document: <br><b>{$document->title}</b></p>
+                        <p>Please click the secure button below to access the edit form. For security reasons, this link is for <b>ONE-TIME USE ONLY</b> and will automatically expire once you save your changes (or within 24 hours).</p>
+                        <br>
+                        <a href='{$secureEditUrl}' style='background-color: #003366; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;'>Open Edit Form</a>
+                        <br><br>
+                        <p style='color: gray; font-size: 12px;'>If you did not request this, please ignore this email.</p>
+                    ");
+        });
+
+        return response()->json(['success' => true]);
+    }
+
+    // =======================================================
+    // 11. FITUR EDIT: Tampilkan Form Edit (One-Time Link Check)
+    // =======================================================
+    public function editForm(Request $request, $id)
+    {
+        $document = Document::with('authors')->where('document_number', $id)->firstOrFail();
+        
+        // 🔥 PENJAGA PINTU: Cek apakah timestamp di link masih sama dengan di Database?
+        // Jika dokumen sudah pernah di-save/di-update, otomatis timestamp-nya berbeda!
+        if ($request->query('v') != $document->updated_at->timestamp) {
+            return abort(403, '🔒 SECURITY ALERT: This edit link has already been used and is now expired. If you need to make further corrections, please request a new secure link from the document page.');
+        }
+
+        return view('edit_document', compact('document'));
+    }
+
+    // =======================================================
+    // 12. FITUR EDIT: Proses Update Super Lengkap
+    // =======================================================
+    public function updateDocument(Request $request, $id)
+    {
+        $document = Document::with('authors')->where('document_number', $id)->firstOrFail();
+
+        $request->validate([
+            'title' => 'required|string',
+            'abstract' => 'required|string',
+            'document_type' => 'required|string',
+            'authors' => 'required|array|min:1',
+            'authors.*.name' => 'required|string',
+            'authors.*.email' => 'required|email',
+            'authors.*.institution' => 'required|string',
+        ]);
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            // 1. Update Tabel Utama Dokumen
+            $document->update([
+                'title' => $request->title,
+                'journal_title' => $request->journal_title,
+                'publisher' => $request->publisher,
+                'abstract' => $request->abstract,
+                'keywords' => $request->keywords,
+                'document_type' => $request->document_type,
+                'pub_year' => $request->pub_year,
+                'doi' => $request->doi,
+                'pages' => $request->pages,
+                'reference_count' => $request->reference_count,
+            ]);
+
+            // 2. Sinkronisasi Data Author & Institusi
+            $authorIdsToSync = [];
+
+            foreach ($request->authors as $authorData) {
+                // Cek atau Buat Institusi Baru
+                $institution = \App\Models\Institution::firstOrCreate(
+                    ['name' => $authorData['institution']],
+                    [
+                        'country' => $authorData['country'] ?? null,
+                        'latitude' => $authorData['lat'] ?? null,
+                        'longitude' => $authorData['lng'] ?? null
+                    ]
+                );
+
+                // Update koordinat kampus jika ada perubahan dari Leaflet Map
+                if (isset($authorData['lat']) && isset($authorData['lng'])) {
+                    $institution->update([
+                        'latitude' => $authorData['lat'],
+                        'longitude' => $authorData['lng']
+                    ]);
+                }
+
+                // Cari Author berdasarkan email (untuk menghindari duplikasi)
+                $author = \App\Models\Author::firstOrCreate(
+                    ['email' => $authorData['email']], 
+                    [
+                        'name' => $authorData['name'],
+                        'country' => $authorData['country'] ?? null,
+                        'institution_id' => $institution->id
+                    ]
+                );
+
+                // Update jika ada perubahan typo pada nama/negara
+                $author->update([
+                    'name' => $authorData['name'],
+                    'country' => $authorData['country'] ?? null,
+                    'institution_id' => $institution->id
+                ]);
+
+                $authorIdsToSync[] = $author->id;
+            }
+
+            // Sync Pivot Table: Ini otomatis menghapus author yang di-remove, dan memasukkan yang di-add
+            $document->authors()->sync($authorIdsToSync);
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            // 3. Kirim Email Notifikasi
+            \Illuminate\Support\Facades\Mail::send([], [], function ($message) use ($document) {
+                $message->to($document->submitter_email)
+                        ->subject('SustaIndex - Document Updated Successfully')
+                        ->html("
+                            <h3>Update Successful</h3>
+                            <p>Hello,</p>
+                            <p>The metadata for your document <b>{$document->title}</b> has been successfully updated in our index.</p>
+                            <p>Thank you for keeping your academic records accurate!</p>
+                        ");
+            });
+
+            return redirect('/document/' . $document->document_number)->with('success', 'Document information has been successfully updated!');
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return back()->with('error', 'Update failed: ' . $e->getMessage());
+        }
     }
 }

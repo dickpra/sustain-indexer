@@ -16,6 +16,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
+        $schedule->command('sustaindex:sync-citations')->weeklyOn(0, '01:00')->withoutOverlapping();
 
         // 👇 LOGIKA TUKANG SAPU OTOMATIS 👇
         $schedule->call(function () {
