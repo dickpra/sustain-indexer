@@ -320,7 +320,7 @@ class DocumentController extends Controller
     }
 
     // ==========================================
-    // 4. Fungsi Pencarian (Search API) - UPDATED FACETED
+    // 4. Fungsi Pencarian (Search API) - OMNI SEARCH
     // ==========================================
     public function search(Request $request)
     {
@@ -329,18 +329,27 @@ class DocumentController extends Controller
         $year = $request->query('year');
         $authorFilter = $request->query('author');
         
-        // 1. QUERY DASAR (Hanya berdasarkan teks pencarian)
-        // 1. QUERY DASAR (Hanya berdasarkan teks pencarian)
+        // 1. QUERY DASAR (Pencarian Sapu Jagat)
         $baseQuery = Document::with('authors.institution')->where('is_verified', true);
 
         if ($q) {
             $baseQuery->where(function($queryBuilder) use ($q) {
+                // A. Cari di data Dokumen itu sendiri
                 $queryBuilder->where('title', 'like', "%$q%")
                              ->orWhere('abstract', 'like', "%$q%")
-                             ->orWhere('keywords', 'like', "%$q%") // <--- TAMBAHKAN BARIS INI BOS! 🔥
+                             ->orWhere('keywords', 'like', "%$q%")
                              ->orWhere('document_number', 'like', "%$q%")
+                             ->orWhere('publisher', 'like', "%$q%")      // 🔥 Cari nama Publisher
+                             ->orWhere('journal_title', 'like', "%$q%")  // 🔥 Cari nama Jurnal/Conference
+                             
+                             // B. Cari di data Penulis (Relasi ke tabel Authors)
                              ->orWhereHas('authors', function($authorQuery) use ($q) {
                                  $authorQuery->where('name', 'like', "%$q%");
+                             })
+                             
+                             // C. Cari di data Kampus (Relasi bersarang Authors -> Institutions)
+                             ->orWhereHas('authors.institution', function($instQuery) use ($q) {
+                                 $instQuery->where('name', 'like', "%$q%");
                              });
             });
         }

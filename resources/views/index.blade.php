@@ -117,7 +117,7 @@
         <div class="col-md-9" id="mainContentColumn">
             
             <div class="input-group input-group-lg mb-4 search-box">
-                <input type="text" id="searchInput" class="form-control" placeholder="Search by title, abstract, or number..." autocomplete="off">
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by title, author, university, journal, or publisher..." autocomplete="off">
                 <button class="btn btn-primary px-4" type="button" onclick="fetchResults(document.getElementById('searchInput').value)">Search</button>
             </div>
 
