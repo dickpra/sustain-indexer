@@ -41,6 +41,8 @@ class DocumentController extends Controller
             'authors.*.institution' => 'required|string',
             'authors.*.lat' => 'nullable|numeric',
             'authors.*.lng' => 'nullable|numeric',
+            'journal_title' => 'required|string', // <-- Sekarang Wajib
+            'publisher' => 'required|string',     // <-- Sekarang Wajib
         ]);
         // ==========================================
         // FITUR BARU: CEK DUPLIKASI JUDUL DARI DATABASE
@@ -725,6 +727,8 @@ class DocumentController extends Controller
             'authors' => 'required|array|min:1',
             'authors.*.name' => 'required|string',
             'authors.*.email' => 'required|email',
+            'journal_title' => 'required|string', // <-- Sekarang Wajib
+            'publisher' => 'required|string',     // <-- Sekarang Wajib
         ]);
 
         // ==========================================
@@ -923,6 +927,8 @@ class DocumentController extends Controller
             'authors.*.name' => 'required|string',
             'authors.*.email' => 'required|email',
             'authors.*.institution' => 'required|string',
+            'journal_title' => 'required|string', // <-- Sekarang Wajib
+            'publisher' => 'required|string',     // <-- Sekarang Wajib
         ]);
 
         \Illuminate\Support\Facades\DB::beginTransaction();

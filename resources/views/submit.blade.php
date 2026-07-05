@@ -65,13 +65,16 @@
 
                     <div class="row mb-4 bg-light p-3 border">
                         <div class="col-md-6 mb-3 mb-md-0">
-                            <label class="form-label">Journal / Conference Name (Optional)</label>
-                            <input type="text" name="journal_title" class="form-control" placeholder="e.g. Journal of Sustainability">
+                            <!-- Hapus (Optional), tambah bintang dan required -->
+                            <label class="form-label">Journal / Conference Name <span class="text-danger">*</span></label>
+                            <input type="text" name="journal_title" class="form-control" value="{{ $document->journal_title ?? '' }}" required>
                             <small class="text-muted">Where was this published?</small>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Publisher (Optional)</label>
-                            <input type="text" name="publisher" class="form-control" placeholder="e.g. Universitas Gadjah Mada">
+                            <!-- Hapus (Optional), tambah bintang dan required -->
+                            <label class="form-label">Publisher <span class="text-danger">*</span></label>
+                            <input type="text" name="publisher" class="form-control" value="{{ $document->publisher ?? '' }}" required>
+                            <small class="text-muted">Who is the publisher?</small>
                         </div>
                     </div>
 

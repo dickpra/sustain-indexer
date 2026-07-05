@@ -341,26 +341,20 @@
                     }
 
                     // ==========================================
-                    // FITUR BARU: AMBIL ANGKA SITASI
-                    // ==========================================
-                    // ==========================================
-                    // LINK KE HALAMAN PROFIL JURNAL BARU
+                    // LINK GABUNGAN: JURNAL & PUBLISHER
                     // ==========================================
                     const citations = item.real_citation_count || 0;
-
-                    // Buat URL yang aman (hilangkan spasi jadi %20, dll)
                     const journalUrl = item.journal_title ? encodeURIComponent(item.journal_title) : '';
 
-                    const journalHtml = item.journal_title 
-                        ? `<div class="small text-muted mb-1" style="font-size: 0.9em;">
+                    let journalHtml = '';
+                    if (item.journal_title && item.publisher) {
+                        journalHtml = `<div class="small text-muted mb-1" style="font-size: 0.9em;">
                             <i class="bi bi-journal-bookmark-fill text-secondary me-1"></i> Published in: 
-                            <a href="/journal/${journalUrl}" 
-                               class="fw-bold text-decoration-none hover-underline" style="color: #003366;">
-                                ${item.journal_title}
-                            </a> 
-                            ${item.publisher ? `by ${item.publisher}` : ''}
-                           </div>` 
-                        : '';
+                            <a href="/journal/${journalUrl}" class="fw-bold text-decoration-none hover-underline" style="color: #003366;">
+                                ${item.journal_title} <text-secondary>by ${item.publisher}</span>
+                            </a>
+                        </div>`;
+                    }
 
                     const card = `
                         <div class="result-card">

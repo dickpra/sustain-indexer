@@ -88,33 +88,50 @@
         <span class="badge bg-danger mb-3 px-3 py-2" style="font-size: 0.9em; letter-spacing: 1px;">
             <i class="bi bi-journal-text me-1"></i> INDEXED JOURNAL SOURCE
         </span>
-        <h1 class="journal-name">{{ $journalName }}</h1>
+        <h1 class="journal-name">
+            {{ $journalName }} 
+            <br>
+            <span style="font-size: 0.5em; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #ffcccc; letter-spacing: 1px; text-transform: uppercase;">
+                PUBLISHED BY {{ $publisherName }}
+            </span>
+        </h1>
     </div>
 </div>
 
 <!-- ========================================== -->
-<!-- 2. FLOATING STATS DASHBOARD -->
+<!-- 2. FLOATING STATS DASHBOARD (DENGAN S-FACTOR) -->
 <!-- ========================================== -->
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-9">
+        <div class="col-md-10"> <!-- Diperlebar jadi col-md-10 -->
             <div class="stats-card p-4">
                 <div class="row text-center">
-                    <div class="col-4 border-end">
+                    
+                    <!-- S-FACTOR (BINTANG UTAMANYA) -->
+                    <div class="col-3 border-end">
+                        <div class="text-muted small fw-bold text-uppercase mb-1" style="color: #cc0000 !important;">🔥 S-Factor</div>
+                        <div class="fs-2 fw-bold text-danger">{{ $sFactor }}</div>
+                        <div class="small text-muted mt-1">Impact Score</div>
+                    </div>
+
+                    <div class="col-3 border-end">
                         <div class="text-muted small fw-bold text-uppercase mb-1">Total Indexed</div>
-                        <div class="fs-2 fw-bold text-dark">{{ $documents->total() }}</div>
+                        <div class="fs-2 fw-bold text-dark">{{ $totalDocs }}</div>
                         <div class="small text-muted mt-1">Articles</div>
                     </div>
-                    <div class="col-4 border-end">
+                    
+                    <div class="col-3 border-end">
                         <div class="text-muted small fw-bold text-uppercase mb-1">Total Citations</div>
                         <div class="fs-2 fw-bold text-primary">{{ number_format($totalCitations) }}</div>
                         <div class="small text-muted mt-1">Across all papers</div>
                     </div>
-                    <div class="col-4">
+                    
+                    <div class="col-3">
                         <div class="text-muted small fw-bold text-uppercase mb-1">Total Views</div>
                         <div class="fs-2 fw-bold text-success">{{ number_format($totalViews) }}</div>
                         <div class="small text-muted mt-1">SustainDex Engine</div>
                     </div>
+
                 </div>
             </div>
         </div>

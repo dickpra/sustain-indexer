@@ -126,12 +126,10 @@
             </div>
 
             <div class="col-md-6">
-                <div class="text-muted small fw-bold text-uppercase mb-1">S-Factor (3-Years)</div>
-                <div class="display-4 fw-bold text-primary">
-                    {{ $author->s_factor }}
-                </div>
-                <div class="small text-muted mt-2">
-                    Citation ratio modified by platform quality parameters.
+                <div class="text-muted small fw-bold text-uppercase">Total Citations</div>
+                <div class="fs-2 fw-bold text-primary">
+                    <!-- Menghitung total sitasi langsung dari relasi dokumen tanpa membebani database -->
+                    {{ number_format($author->documents->where('is_verified', true)->sum('citation_count')) }}
                 </div>
             </div>
         </div>

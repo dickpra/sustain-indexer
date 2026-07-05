@@ -61,13 +61,13 @@ Route::get('/institution/{id}', [App\Http\Controllers\DocumentController::class,
 // RUTE SUBMIT OJS XML (Sistem Baru Terpisah)
 // ==========================================
 // Halaman form upload & review XML
-Route::get('/submit-xml', [\App\Http\Controllers\DocumentController::class, 'createXml']); 
+// Route::get('/submit-xml', [\App\Http\Controllers\DocumentController::class, 'createXml']); 
 
-// Proses bedah/scan file XML (Preview)
-Route::post('/submit-xml/scan', [\App\Http\Controllers\DocumentController::class, 'scanXml']); 
+// // Proses bedah/scan file XML (Preview)
+// Route::post('/submit-xml/scan', [\App\Http\Controllers\DocumentController::class, 'scanXml']); 
 
-// Proses simpan final ke database
-Route::post('/submit-xml/save', [\App\Http\Controllers\DocumentController::class, 'storeXmlFinal']);
+// // Proses simpan final ke database
+// Route::post('/submit-xml/save', [\App\Http\Controllers\DocumentController::class, 'storeXmlFinal']);
 
 // ==========================================
 // RUTE EXPERIMENTAL: HYBRID AI PDF SCANNER
@@ -78,6 +78,8 @@ Route::post('/submit-beta/save', [\App\Http\Controllers\BetaSubmitController::cl
 
 // Rute untuk Profil Jurnal/Conference
 Route::get('/journal/{name}', [\App\Http\Controllers\JournalController::class, 'showJournal']);
+
+Route::get('/publisher/{name}', [\App\Http\Controllers\JournalController::class, 'showPublisher']);
 
 // 🔥 TAMBAHAN BARU: Jaring pengaman kalau Laravel melakukan redirect back()
 Route::get('/submit-beta/scan', function () {

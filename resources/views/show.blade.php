@@ -90,6 +90,7 @@
                     style="color: #003366;">
                         {{ $document->journal_title }}
                     </a>
+                    
 
                     @if($document->publisher)
                         <span class="text-muted">by {{ $document->publisher }}</span>
