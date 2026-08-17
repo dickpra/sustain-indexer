@@ -29,6 +29,7 @@ class DocumentController extends Controller
             'title' => 'required|string',
             'abstract' => 'required|string',
             'keywords' => 'nullable|string',
+            'sdgs' => 'required|array|min:1',
             'document_type' => 'required|string',
             'pub_year' => 'nullable|integer',
             'pages' => 'nullable|integer',
@@ -187,13 +188,20 @@ class DocumentController extends Controller
             $docNumber = 'IDX-' . rand(100000, 999999);
             $token = \Illuminate\Support\Str::random(40);
 
+            // 2. 🔥 MAGIC PENGGABUNGAN KEWORD & SDGs
+            $originalKeywords = trim($request->input('keywords', ''));
+            $sdgsString = implode(', ', $request->input('sdgs')); // Gabungkan array SDG jadi 1 kalimat
+            
+            // Kalau keyword aslinya kosong, pakai SDG saja. Kalau ada, gabungkan pakai koma.
+            $finalKeywords = empty($originalKeywords) ? $sdgsString : $originalKeywords . ', ' . $sdgsString;
+
             $document = Document::create([
                 'document_number' => $docNumber,
                 'title' => $request->title,
                 'journal_title' => $request->journal_title, // <-- Tambahan baru
                 'publisher' => $request->publisher,
                 'abstract' => $request->abstract,
-                'keywords' => $request->keywords,
+                'keywords' => $finalKeywords,
                 'document_type' => $request->document_type,
                 'pub_year' => $request->pub_year,
                 'pages' => $request->pages,                     
@@ -720,6 +728,7 @@ class DocumentController extends Controller
         $request->validate([
             'title' => 'required|string',
             'abstract' => 'required|string',
+            'sdgs' => 'required|array|min:1',
             'document_type' => 'required|string',
             'submitter_first_name' => 'required|string',
             'submitter_last_name' => 'required|string',
@@ -781,6 +790,12 @@ class DocumentController extends Controller
             }
         }
         // =======================================================
+        // 2. 🔥 MAGIC PENGGABUNGAN KEWORD & SDGs
+        $originalKeywords = trim($request->input('keywords', ''));
+        $sdgsString = implode(', ', $request->input('sdgs')); // Gabungkan array SDG jadi 1 kalimat
+        
+        // Kalau keyword aslinya kosong, pakai SDG saja. Kalau ada, gabungkan pakai koma.
+        $finalKeywords = empty($originalKeywords) ? $sdgsString : $originalKeywords . ', ' . $sdgsString;
 
         // 2. Simpan ke Tabel Documents
         $document = \App\Models\Document::create([
@@ -792,7 +807,7 @@ class DocumentController extends Controller
             'document_type' => $request->document_type, 
             'pub_year' => $request->pub_year,
             'doi' => $finalDoi, 
-            'keywords' => $request->keywords, 
+            'keywords' => $finalKeywords, 
             'pages' => $request->pages, 
             'reference_count' => $request->reference_count, 
             'is_verified' => false, 
@@ -922,6 +937,7 @@ class DocumentController extends Controller
         $request->validate([
             'title' => 'required|string',
             'abstract' => 'required|string',
+            'sdgs' => 'required|array|min:1',
             'document_type' => 'required|string',
             'authors' => 'required|array|min:1',
             'authors.*.name' => 'required|string',
@@ -933,13 +949,37 @@ class DocumentController extends Controller
 
         \Illuminate\Support\Facades\DB::beginTransaction();
         try {
+            // ==========================================
+            // 🔥 MAGIC PENGGABUNGAN SDGs (ANTI DUPLIKAT)
+            // ==========================================
+            $rawKeywords = $request->input('keywords', '');
+            
+            // 1. Pecah teks keyword dari form menjadi array (dipisah koma)
+            $keywordArray = array_map('trim', explode(',', $rawKeywords));
+            
+            // 2. FILTER: Buang teks SDG lama yang ikut ter-load di text input Keywords
+            $cleanKeywords = array_filter($keywordArray, function($kw) {
+                // Hapus string yang depannya "SDG 1:", "SDG 12:", dll
+                return !preg_match('/^SDG \d+:/i', $kw); 
+            });
+            
+            // 3. Ambil SDG baru yang barusan dicentang di form
+            $newSdgs = $request->input('sdgs', []);
+            
+            // 4. Gabungkan Keyword bersih dengan SDG yang baru
+            $finalKeywordsArray = array_merge($cleanKeywords, $newSdgs);
+            
+            // 5. Jadikan 1 kalimat utuh lagi pakai koma (buang elemen yang kosong)
+            $finalKeywords = implode(', ', array_filter($finalKeywordsArray));
+
+
             // 1. Update Tabel Utama Dokumen
             $document->update([
                 'title' => $request->title,
                 'journal_title' => $request->journal_title,
                 'publisher' => $request->publisher,
                 'abstract' => $request->abstract,
-                'keywords' => $request->keywords,
+                'keywords' => $finalKeywords, // 🔥 GUNAKAN KEYWORD HASIL GABUNGAN DI SINI
                 'document_type' => $request->document_type,
                 'pub_year' => $request->pub_year,
                 'doi' => $request->doi,

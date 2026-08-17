@@ -45,6 +45,40 @@
             .stats-col { margin-bottom: 30px; }
             .academic-footer .text-md-end { text-align: left !important; margin-top: 20px; }
         }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px; /* Tingkatkan gap sedikit untuk proporsi */
+            margin-bottom: 50px; /* Tingkatkan margin sedikit */
+        }
+
+        .brand-icon {
+            width: 150px; /* Diperbesar dari 120px */
+            height: 150px; /* Diperbesar dari 120px */
+            flex-shrink: 0;
+        }
+
+        .brand-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Pertahankan agar logo muat dan proporsional */
+            /* Hapus yang lama: position: absolute, height: 160px, left: -5px, top: -45px */
+        }
+
+        .brand-text {
+            font-size: 60px; /* Tingkatkan font size secara drastis (untuk 'SustaIndexSearch') */
+            font-weight: 600;
+            line-height: 1;
+            color: #0066ff;
+            letter-spacing: -3px; /* Sesuaikan letter-spacing untuk font yang lebih besar */
+        }
+
+        .brand-text span {
+            color: #198754;
+            font-weight: 400;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </head>
@@ -63,12 +97,12 @@
                         <i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>Upload PDF
                     </a>
                 </li>
-                <li><hr class="dropdown-divider"></li>
+                {{-- <li><hr class="dropdown-divider"></li>
                 <li>
                     <a class="dropdown-item py-2 fw-medium text-dark" href="/submit-xml" style="margin-left: 0; border: none;">
                         <i class="bi bi-filetype-xml text-success me-2"></i>Upload OJS XML
                     </a>
-                </li>
+                </li> --}}
                 <li><hr class="dropdown-divider"></li>
                 <li>
                         <a class="dropdown-item py-2" href="/submit-beta">
@@ -83,7 +117,15 @@
     </div>
 
     <div class="container search-section">
-        <div class="brand-logo">📚SustaIndex<span>Search</span></div>
+        <div class="brand-logo">
+            <div class="brand-icon">
+                <img src="{{ asset('logo/1_Main_Sustaindex_potrait.png') }}" alt="">
+            </div>
+
+            <div class="brand-text">
+                SustaIndex<span>Search</span>
+            </div>
+        </div>
         
         <div class="search-box">
             <form action="/results" method="GET">
@@ -102,11 +144,11 @@
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li>
+                            {{-- <li>
                                 <a class="dropdown-item py-2 fw-medium text-dark" href="/submit-xml" style="margin-left: 0; border: none;">
                                     <i class="bi bi-filetype-xml text-success me-2"></i>Upload OJS XML
                                 </a>
-                            </li>
+                            </li> --}}
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item py-2" href="/submit-beta">
@@ -127,7 +169,82 @@
             <p>A Peer-Reviewed Academic Indexing System</p>
         </div>
     </div>
+    <div class="container my-4" style="max-width: 900px;">
+        <div class="card border-0 shadow-sm rounded-4 p-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border: 1px solid #eaeaea !important;">
+            <div class="row text-center align-items-center g-3">
+                
+                <div class="col-6 col-md-3">
+                    <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                        <i class="bi bi-file-earmark-text-fill fs-4" style="color: #003366;"></i>
+                        <span class="h3 fw-bold mb-0 counter" data-target="{{ $totalDocuments }}" style="color: #003366; font-family: 'Georgia', serif;">0</span>
+                    </div>
+                    <span class="text-uppercase text-muted fw-semibold" style="letter-spacing: 0.5px; font-size: 0.72rem;">Indexed Articles</span>
+                </div>
+                
+                <div class="col-6 col-md-3 border-start-md">
+                    <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                        <i class="bi bi-people-fill fs-4" style="color: #003366;"></i>
+                        <span class="h3 fw-bold mb-0 counter" data-target="{{ $totalAuthors }}" style="color: #003366; font-family: 'Georgia', serif;">0</span>
+                    </div>
+                    <span class="text-uppercase text-muted fw-semibold" style="letter-spacing: 0.5px; font-size: 0.72rem;">Researchers</span>
+                </div>
+                
+                <div class="col-6 col-md-3 border-start-md">
+                    <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                        <i class="bi bi-bank2 fs-4" style="color: #003366;"></i>
+                        <span class="h3 fw-bold mb-0 counter" data-target="{{ $totalInstitutions }}" style="color: #003366; font-family: 'Georgia', serif;">0</span>
+                    </div>
+                    <span class="text-uppercase text-muted fw-semibold" style="letter-spacing: 0.5px; font-size: 0.72rem;">Institutions</span>
+                </div>
+                
+                <div class="col-6 col-md-3 border-start-md">
+                    <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                        <i class="bi bi-globe-americas fs-4" style="color: #003366;"></i>
+                        <span class="h3 fw-bold mb-0 counter" data-target="{{ $totalCountries }}" style="color: #003366; font-family: 'Georgia', serif;">0</span>
+                    </div>
+                    <span class="text-uppercase text-muted fw-semibold" style="letter-spacing: 0.5px; font-size: 0.72rem;">Countries</span>
+                </div>
 
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const counters = document.querySelectorAll('.counter');
+            const speed = 150; 
+
+            const animateCounters = () => {
+                counters.forEach(counter => {
+                    const updateCount = () => {
+                        const target = +counter.getAttribute('data-target');
+                        const count = +counter.innerText.replace(/,/g, ''); 
+                        const inc = target / speed;
+
+                        if (count < target) {
+                            counter.innerText = Math.ceil(count + inc).toLocaleString('en-US');
+                            setTimeout(updateCount, 15);
+                        } else {
+                            counter.innerText = target.toLocaleString('en-US');
+                        }
+                    };
+                    updateCount();
+                });
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        animateCounters();
+                        observer.disconnect(); 
+                    }
+                });
+            }, { threshold: 0.2 }); 
+
+            const card = document.querySelector('.counter')?.closest('.card');
+            if (card) observer.observe(card);
+        });
+    </script>
     <div class="container stats-container" style="margin-top: 50px; margin-bottom: 50px;">
         <div class="row justify-content-center text-start">
             
@@ -205,11 +322,11 @@
                             </a>
                         </li>
                         <li><hr class="dropdown-divider"></li>
-                        <li>
+                        {{-- <li>
                             <a class="dropdown-item py-2 fw-medium text-dark" href="/submit-xml" style="margin-left: 0; border: none;">
                                 <i class="bi bi-filetype-xml text-success me-2"></i>Upload OJS XML
                             </a>
-                        </li>
+                        </li> --}}
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <a class="dropdown-item py-2" href="/submit-beta">

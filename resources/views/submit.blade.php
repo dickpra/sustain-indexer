@@ -88,6 +88,71 @@
                         <input type="text" name="keywords" class="form-control" placeholder="e.g., global warming, carbon footprint, sustainability">
                         <small class="text-muted">Separate multiple keywords with commas.</small>
                     </div>
+                    <div class="mb-4">
+                    <label class="form-label">Sustainable Development Goals (SDGs) <span class="text-danger">*</span></label>
+                    <p class="text-muted small mb-2">
+                        <i class="bi bi-hand-index-thumb"></i> Click one or more SDGs that are relevant to this document.
+                    </p>
+                    
+                    <style>
+                        .sdg-badges .btn { border-radius: 50rem; padding: 6px 15px; margin: 0 5px 8px 0; font-size: 0.85rem; border: 1px solid #ccc; color: #555; background-color: white; transition: all 0.2s; }
+                        .sdg-badges .btn:hover { border-color: #003366; color: #003366; background-color: #f4f8fc; }
+                        .sdg-badges .btn-check:checked + .btn { background-color: #003366; color: white; border-color: #003366; box-shadow: 0 2px 5px rgba(0,51,102,0.3); font-weight: bold; }
+                    </style>
+
+                    <div class="sdg-badges">
+                        <input type="checkbox" class="btn-check" id="sdg1" name="sdgs[]" value="SDG 1: No Poverty">
+                        <label class="btn" for="sdg1">1: No Poverty</label>
+
+                        <input type="checkbox" class="btn-check" id="sdg2" name="sdgs[]" value="SDG 2: Zero Hunger">
+                        <label class="btn" for="sdg2">2: Zero Hunger</label>
+
+                        <input type="checkbox" class="btn-check" id="sdg3" name="sdgs[]" value="SDG 3: Good Health and Well-being">
+                        <label class="btn" for="sdg3">3: Good Health</label>
+
+                        <input type="checkbox" class="btn-check" id="sdg4" name="sdgs[]" value="SDG 4: Quality Education">
+                        <label class="btn" for="sdg4">4: Quality Education</label>
+
+                        <input type="checkbox" class="btn-check" id="sdg5" name="sdgs[]" value="SDG 5: Gender Equality">
+                        <label class="btn" for="sdg5">5: Gender Equality</label>
+
+                        <input type="checkbox" class="btn-check" id="sdg6" name="sdgs[]" value="SDG 6: Clean Water and Sanitation">
+                        <label class="btn" for="sdg6">6: Clean Water</label>
+
+                        <input type="checkbox" class="btn-check" id="sdg7" name="sdgs[]" value="SDG 7: Affordable and Clean Energy">
+                        <label class="btn" for="sdg7">7: Clean Energy</label>
+
+                        <input type="checkbox" class="btn-check" id="sdg8" name="sdgs[]" value="SDG 8: Decent Work and Economic Growth">
+                        <label class="btn" for="sdg8">8: Economic Growth</label>
+
+                        <input type="checkbox" class="btn-check" id="sdg9" name="sdgs[]" value="SDG 9: Industry, Innovation and Infrastructure">
+                        <label class="btn" for="sdg9">9: Industry & Innovation</label>
+
+                        <input type="checkbox" class="btn-check" id="sdg10" name="sdgs[]" value="SDG 10: Reduced Inequality">
+                        <label class="btn" for="sdg10">10: Reduced Inequality</label>
+
+                        <input type="checkbox" class="btn-check" id="sdg11" name="sdgs[]" value="SDG 11: Sustainable Cities and Communities">
+                        <label class="btn" for="sdg11">11: Sustainable Cities</label>
+
+                        <input type="checkbox" class="btn-check" id="sdg12" name="sdgs[]" value="SDG 12: Responsible Consumption and Production">
+                        <label class="btn" for="sdg12">12: Responsible Consumption</label>
+
+                        <input type="checkbox" class="btn-check" id="sdg13" name="sdgs[]" value="SDG 13: Climate Action">
+                        <label class="btn" for="sdg13">13: Climate Action</label>
+
+                        <input type="checkbox" class="btn-check" id="sdg14" name="sdgs[]" value="SDG 14: Life Below Water">
+                        <label class="btn" for="sdg14">14: Life Below Water</label>
+
+                        <input type="checkbox" class="btn-check" id="sdg15" name="sdgs[]" value="SDG 15: Life on Land">
+                        <label class="btn" for="sdg15">15: Life on Land</label>
+
+                        <input type="checkbox" class="btn-check" id="sdg16" name="sdgs[]" value="SDG 16: Peace and Justice Strong Institutions">
+                        <label class="btn" for="sdg16">16: Peace & Justice</label>
+
+                        <input type="checkbox" class="btn-check" id="sdg17" name="sdgs[]" value="SDG 17: Partnerships to achieve the Goal">
+                        <label class="btn" for="sdg17">17: Partnerships</label>
+                    </div>
+                </div>
 
                     <div class="row mb-4">
                         <div class="col-md-6 mb-3">
@@ -102,6 +167,19 @@
                         <div class="col-md-6 mb-4">
                             <label class="form-label">Publication Year</label>
                             <input type="number" name="pub_year" class="form-control" placeholder="e.g., 2026">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                    <label class="form-label">DOI (Digital Object Identifier) <span class="text-danger">*</span></label>
+                    <input type="text" name="doi" id="inputDoi" class="form-control" placeholder="Contoh: 10.1234/sustaindex.v1i1" required>
+                    
+                    <div id="doiWarning" class="text-danger small mt-1 d-none">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Format DOI tidak valid! Wajib diawali dengan "10." (Contoh: 10.1234/abc)
+                    </div>
+                    
+                    <div id="doiSuccess" class="text-success small mt-1 d-none">
+                            <i class="bi bi-check-circle-fill"></i> Format DOI valid!
                         </div>
                     </div>
                     
@@ -192,6 +270,9 @@
                             <tbody>
                                 <tr><th style="width: 25%; color:#003366;">Document Title</th><td id="rev_title" class="fw-bold"></td></tr>
                                 <tr><th style="color:#003366;">Abstract</th><td id="rev_abstract" style="text-align: justify; font-size: 0.9em;"></td></tr>
+                                
+                                <tr><th style="color:#003366;">SDGs</th><td id="rev_sdgs"></td></tr>
+                                
                                 <tr><th style="color:#003366;">Keywords</th><td id="rev_keywords"></td></tr>
                                 <tr><th style="color:#003366;">Type & Year</th><td id="rev_type_year"></td></tr>
                                 <tr><th style="color:#003366;">Pages & Refs</th><td id="rev_pages_refs"></td></tr>
@@ -381,7 +462,16 @@
         document.getElementById('rev_abstract').innerText = formData.get('abstract');
         document.getElementById('rev_keywords').innerText = formData.get('keywords') || '-';
         document.getElementById('rev_type_year').innerText = formData.get('document_type') + ' (' + (formData.get('pub_year') || 'N/A') + ')';
-        
+        // 1. Ambil semua checkbox SDG yang sedang dicentang
+        let selectedSdgs = Array.from(document.querySelectorAll('input[name="sdgs[]"]:checked')).map(cb => {
+            // Bungkus dengan span badge biar rapi di tabel
+            return `<span class="badge" style="background-color: #003366; margin-right: 4px; margin-bottom: 4px;">${cb.value}</span>`;
+        });
+
+        // 2. Masukkan ke dalam tabel review (atau tampilkan pesan jika kosong)
+        document.getElementById('rev_sdgs').innerHTML = selectedSdgs.length > 0 
+            ? selectedSdgs.join(' ') 
+            : '<em class="text-muted">No SDGs selected</em>';
         const pgs = formData.get('pages') ? formData.get('pages') + ' pages' : 'N/A';
         const refs = formData.get('reference_count') ? formData.get('reference_count') + ' refs' : 'N/A';
         document.getElementById('rev_pages_refs').innerText = pgs + ' | ' + refs;

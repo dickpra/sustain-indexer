@@ -237,6 +237,7 @@ class BetaSubmitController extends Controller
         $request->validate([
             'title' => 'required|string',
             'abstract' => 'required|string',
+            'sdgs' => 'required|array|min:1',
             'document_type' => 'required|string',
             'submitter_first_name' => 'required|string',
             'submitter_last_name' => 'required|string',
@@ -303,6 +304,12 @@ class BetaSubmitController extends Controller
         // 3. Simpan ke Tabel Documents
         $docNumber = 'IDX-' . rand(100000, 999999); // 🔥 UBAH JADI IDX- + 6 ANGKA ACAK 🔥
 
+        $originalKeywords = trim($request->input('keywords', ''));
+        $sdgsString = implode(', ', $request->input('sdgs')); // Gabungkan array SDG jadi 1 kalimat
+        
+        // Kalau keyword aslinya kosong, pakai SDG saja. Kalau ada, gabungkan pakai koma.
+        $finalKeywords = empty($originalKeywords) ? $sdgsString : $originalKeywords . ', ' . $sdgsString;
+
         $document = \App\Models\Document::create([
             'document_number' => $docNumber,
             'title' => $request->title,
@@ -312,7 +319,7 @@ class BetaSubmitController extends Controller
             'document_type' => $request->document_type, 
             'pub_year' => $request->pub_year,
             'doi' => $doi, 
-            'keywords' => $request->keywords, 
+            'keywords' => $finalKeywords,
             'pages' => $request->pages, 
             'reference_count' => $request->reference_count, 
             'is_verified' => false, 

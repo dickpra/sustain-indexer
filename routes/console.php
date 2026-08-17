@@ -2,7 +2,8 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
-
+use Illuminate\Support\Facades\Route;
+use Illuminate\Console\Scheduling\Schedule;
 /*
 |--------------------------------------------------------------------------
 | Console Routes
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Artisan;
 | simple approach to interacting with each command's IO methods.
 |
 */
-
+Schedule::command('sustaindex:sync-citations')->weekly();
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');

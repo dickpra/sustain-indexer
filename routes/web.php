@@ -1,19 +1,24 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DocumentController;
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
 
+// Import semua controller yang sudah dipecah
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\DocumentDisplayController;
+use App\Http\Controllers\VerificationController;
+use App\Http\Controllers\PdfSubmissionController;
+use App\Http\Controllers\XmlSubmissionController;
+use App\Http\Controllers\AuthorInstitutionController;
+use App\Http\Controllers\DocumentEditController;
+use App\Http\Controllers\BetaSubmitController;
+use App\Http\Controllers\JournalController;
+
+// ==========================================
+// BERANDA & PENCARIAN
+// ==========================================
 Route::get('/', function () {
+    // 1. Data Leaderboards (Bawaan)
     $mostCited = \App\Models\Document::where('is_verified', true)
                  ->orderBy('citation_count', 'desc')
                  ->take(3)
@@ -24,78 +29,85 @@ Route::get('/', function () {
                    ->take(3)
                    ->get();
 
-    return view('home', compact('mostCited', 'mostPopular')); // Sesuaikan 'welcome' dengan nama blade-mu
+    // 2. 🔥 DATA STATISTIK GLOBAL (BARU)
+    $totalDocuments = \App\Models\Document::count();
+    $totalAuthors = \App\Models\Author::count();
+    $totalInstitutions = \App\Models\Institution::count();
+    $totalCountries = \App\Models\Institution::whereNotNull('country')->distinct('country')->count();
+
+    // 3. Kirim semua variabel ke view 'home'
+    return view('home', compact(
+        'mostCited', 
+        'mostPopular', 
+        'totalDocuments', 
+        'totalAuthors', 
+        'totalInstitutions', 
+        'totalCountries'
+    )); 
 });
 
-// Halaman Hasil Pencarian (yang ada filternya)
-Route::get('/results', [App\Http\Controllers\DocumentController::class, 'index']);
+Route::get('/results', [HomeController::class, 'index']); // Menggantikan DocumentController@index
+Route::get('/search', [SearchController::class, 'search']);
 
-Route::get('/search', [DocumentController::class, 'search']);
-Route::get('/document/{document_number}', [DocumentController::class, 'show']);
+// ==========================================
+// 1. FITUR EDIT DOKUMEN (Letakkan di ATAS rute show!)
+// ==========================================
+Route::post('/document/{id}/request-edit', [DocumentEditController::class, 'requestEdit']);
 
-Route::get('/verify/{token}', [App\Http\Controllers\DocumentController::class, 'verifyEmail']);
-// Route untuk menampilkan halaman UI form
+Route::get('/document/{id}/secure-edit', [DocumentEditController::class, 'editForm'])
+    ->name('document.edit')
+    ->middleware('signed');
+
+Route::post('/document/{id}/update', [DocumentEditController::class, 'updateDocument']);
+
+
+// ==========================================
+// 2. TAMPILAN DOKUMEN & RECEIPT (Letakkan di BAWAH)
+// ==========================================
+Route::get('/document/{document_number}', [DocumentDisplayController::class, 'show'])->where('document_number', '.*');
+
+Route::get('/receipt/{id}', [DocumentDisplayController::class, 'receipt']);
+
+// ==========================================
+// AUTHOR, INSTITUSI & JURNAL
+// ==========================================
+Route::get('/api/institutions', [AuthorInstitutionController::class, 'searchInstitutions']);
+Route::get('/author/{id}', [AuthorInstitutionController::class, 'showAuthor']);
+Route::get('/institution/{id}', [AuthorInstitutionController::class, 'showInstitution']);
+Route::get('/journal/{name}', [JournalController::class, 'showJournal']);
+Route::get('/publisher/{name}', [JournalController::class, 'showPublisher']);
+
+// ==========================================
+// SUBMIT PDF (MANUAL/STANDARD)
+// ==========================================
 Route::get('/submit', function () {
     return view('submit');
 });
+Route::post('/submit-index', [PdfSubmissionController::class, 'store'])->middleware('throttle:3,1');
 
-// (Ini route yang sudah kamu buat sebelumnya)
-Route::post('/submit-index', [App\Http\Controllers\DocumentController::class, 'store'])
-    ->middleware('throttle:3,1');
+// ==========================================
+// VERIFIKASI EMAIL
+// ==========================================
+Route::get('/verify/{token}', [VerificationController::class, 'verifyEmail']);
+Route::post('/resend-email', [VerificationController::class, 'resendEmail'])->middleware('throttle:3,1');
 
-// Halaman URL Tanda Terima (Bisa di-bookmark / masuk history)
-Route::get('/receipt/{id}', [App\Http\Controllers\DocumentController::class, 'receipt']);
-
-// API untuk proses Kirim Ulang Email (Maks 3x per menit)
-Route::post('/resend-email', [App\Http\Controllers\DocumentController::class, 'resendEmail'])
-    ->middleware('throttle:3,1');
-// Route untuk Live Search Institusi
-Route::get('/api/institutions', [\App\Http\Controllers\DocumentController::class, 'searchInstitutions']);
-
-// Route untuk melihat profil author berdasarkan ID
-Route::get('/author/{id}', [App\Http\Controllers\DocumentController::class, 'showAuthor']);
-
-Route::get('/institution/{id}', [App\Http\Controllers\DocumentController::class, 'showInstitution']);
 
 // ==========================================
 // RUTE SUBMIT OJS XML (Sistem Baru Terpisah)
 // ==========================================
-// Halaman form upload & review XML
-// Route::get('/submit-xml', [\App\Http\Controllers\DocumentController::class, 'createXml']); 
-
-// // Proses bedah/scan file XML (Preview)
-// Route::post('/submit-xml/scan', [\App\Http\Controllers\DocumentController::class, 'scanXml']); 
-
-// // Proses simpan final ke database
-// Route::post('/submit-xml/save', [\App\Http\Controllers\DocumentController::class, 'storeXmlFinal']);
+// (Route ini sudah dibuka komentarnya dan diarahkan ke controller khusus XML)
+// Route::get('/submit-xml', [XmlSubmissionController::class, 'createXml']); 
+// Route::post('/submit-xml/scan', [XmlSubmissionController::class, 'scanXml']); 
+// Route::post('/submit-xml/save', [XmlSubmissionController::class, 'storeXmlFinal']);
 
 // ==========================================
 // RUTE EXPERIMENTAL: HYBRID AI PDF SCANNER
 // ==========================================
-Route::get('/submit-beta', [\App\Http\Controllers\BetaSubmitController::class, 'create']);
-Route::post('/submit-beta/scan', [\App\Http\Controllers\BetaSubmitController::class, 'scanPdfHybrid']);
-Route::post('/submit-beta/save', [\App\Http\Controllers\BetaSubmitController::class, 'storeFinal']);
-
-// Rute untuk Profil Jurnal/Conference
-Route::get('/journal/{name}', [\App\Http\Controllers\JournalController::class, 'showJournal']);
-
-Route::get('/publisher/{name}', [\App\Http\Controllers\JournalController::class, 'showPublisher']);
+Route::get('/submit-beta', [BetaSubmitController::class, 'create']);
+Route::post('/submit-beta/scan', [BetaSubmitController::class, 'scanPdfHybrid']);
+Route::post('/submit-beta/save', [BetaSubmitController::class, 'storeFinal']);
 
 // 🔥 TAMBAHAN BARU: Jaring pengaman kalau Laravel melakukan redirect back()
 Route::get('/submit-beta/scan', function () {
     return redirect('/submit-beta')->with('error', 'Session expired or validation failed. Please re-upload your PDF.');
 });
-
-// ==========================================
-// RUTE FITUR EDIT DOKUMEN (SECURE SIGNED URL)
-// ==========================================
-// 1. Rute untuk menerima request edit dan mengirim email
-Route::post('/document/{id}/request-edit', [\App\Http\Controllers\DocumentController::class, 'requestEdit']);
-
-// 2. Rute untuk membuka form edit (WAJIB terenkripsi dengan middleware 'signed')
-Route::get('/document/{id}/secure-edit', [\App\Http\Controllers\DocumentController::class, 'editForm'])
-    ->name('document.edit')
-    ->middleware('signed');
-
-// 3. Rute untuk menyimpan hasil edit
-Route::post('/document/{id}/update', [\App\Http\Controllers\DocumentController::class, 'updateDocument']);
