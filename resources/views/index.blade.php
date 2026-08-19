@@ -59,6 +59,17 @@
         .doc-abstract { color: #4d5156; font-size: 0.95em; line-height: 1.6; }
         .doc-meta { font-size: 0.85em; color: #70757a; margin-top: 10px; }
         .badge-type { background-color: #e8f0fe; color: #1967d2; border: 1px solid #c6dafc; }
+
+        /* SDG Badge Aktif */
+        .btn-outline-primary.active-sdg {
+            background-color: #0d6efd !important;
+            color: white !important;
+            border-color: #0d6efd !important;
+        }
+        .btn-outline-primary.active-sdg .sdg-count {
+            background-color: white !important;
+            color: #0d6efd !important;
+        }
     </style>
 </head>
 <body>
@@ -69,456 +80,325 @@
     <div class="row">
         
         <div class="col-md-3" id="filterSidebar">
-            <h5 class="mb-3 fw-bold text-secondary">Filter Results</h5>
+            <h5 class="mb-3 fw-bold text-dark" style="font-family: 'Georgia', serif;">Filter Results</h5>
             
-            <div class="filter-box">
-                <div class="filter-header">Author / Contributor</div>
+            <div class="filter-box mb-3 border rounded shadow-sm bg-white">
+                <div class="filter-header bg-light border-bottom p-2 fw-bold text-secondary small text-uppercase" style="letter-spacing: 0.5px;">Author / Contributor</div>
                 <div class="p-3">
                     <input type="text" id="authorFilterInput" class="form-control form-control-sm" placeholder="e.g. John Doe">
                 </div>
             </div>
 
-            <div class="filter-box">
-                <div class="filter-header">Publication Type</div>
-                <ul class="filter-list">
+           <!-- FILTER SDG (FULL 17 GOALS) -->
+           <div class="filter-box mb-3 border rounded shadow-sm bg-white">
+                <div class="filter-header bg-light border-bottom p-2 fw-bold text-secondary small text-uppercase" style="letter-spacing: 0.5px;">Sustainable Goals</div>
+                <ul class="filter-list list-unstyled p-2 mb-0 small">
+                    @forelse($sdgFacets as $sdgCode => $data)
+                        <li class="filter-item filter-sdg p-1 d-flex justify-content-between align-items-center {{ request('sdg') == $sdgCode ? 'active' : '' }}" 
+                            data-sdg="{{ $sdgCode }}" 
+                            style="cursor:pointer;"
+                            title="{{ $sdgCode }}: {{ $data['name'] }}"> <span class="text-truncate" style="max-width: 85%;">
+                                <strong class="text-primary">{{ $sdgCode }}:</strong> <span class="text-muted">{{ $data['name'] }}</span>
+                            </span>
+                            <span class="badge {{ request('sdg') == $sdgCode ? 'bg-primary' : 'bg-secondary' }} rounded-pill">{{ $data['count'] }}</span>
+                        </li>
+                    @empty
+                        <li class="p-1 text-muted fst-italic small text-center">No SDGs mapped yet.</li>
+                    @endforelse
+                </ul>
+            </div>
+
+            <div class="filter-box mb-3 border rounded shadow-sm bg-white">
+                <div class="filter-header bg-light border-bottom p-2 fw-bold text-secondary small text-uppercase" style="letter-spacing: 0.5px;">Publication Type</div>
+                <ul class="filter-list list-unstyled p-2 mb-0 small">
                     @foreach($docTypes as $type)
-                        <li class="filter-item type-item {{ $loop->iteration > 5 ? 'd-none extra-type' : '' }}" data-filter="type" data-value="{{ $type->document_type }}">
-                            {{ $type->document_type ?: 'Unknown' }} 
-                            <span class="filter-count type-count">{{ $type->total }}</span>
+                        <li class="filter-item type-item p-1 d-flex justify-content-between align-items-center {{ $loop->iteration > 5 ? 'd-none extra-type' : '' }}" data-filter="type" data-value="{{ $type->document_type }}" style="cursor:pointer;">
+                            <span>{{ $type->document_type ?: 'Unknown' }}</span>
+                            <span class="badge bg-secondary rounded-pill">{{ $type->total }}</span>
                         </li>
                     @endforeach
                 </ul>
             </div>
 
-            <div class="filter-box">
-                <div class="filter-header">Publication Year</div>
-                <ul class="filter-list">
-                    <li class="filter-item year-item" data-filter="year" data-value="exact_{{ $yearStats['current_year'] }}">
-                        In {{ $yearStats['current_year'] }} <span class="filter-count" id="count_current">{{ $yearStats['count_current'] }}</span>
+            <div class="filter-box mb-3 border rounded shadow-sm bg-white">
+                <div class="filter-header bg-light border-bottom p-2 fw-bold text-secondary small text-uppercase" style="letter-spacing: 0.5px;">Top Publishers</div>
+                <ul class="filter-list list-unstyled p-2 mb-0 small">
+                    @foreach($topPublishers as $pub)
+                        <li class="filter-item pub-item p-1 d-flex justify-content-between align-items-center" data-filter="publisher" data-value="{{ $pub->publisher }}" style="cursor:pointer;">
+                            <span class="text-truncate" style="max-width: 80%;">{{ $pub->publisher }}</span>
+                            <span class="badge bg-secondary rounded-pill">{{ $pub->total }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+
+            <div class="filter-box mb-3 border rounded shadow-sm bg-white">
+                <div class="filter-header bg-light border-bottom p-2 fw-bold text-secondary small text-uppercase" style="letter-spacing: 0.5px;">Publication Year</div>
+                <ul class="filter-list list-unstyled p-2 mb-0 small">
+                    <li class="filter-item year-item p-1 d-flex justify-content-between align-items-center" data-filter="year" data-value="exact_{{ $yearStats['current_year'] }}" style="cursor:pointer;">
+                        <span>In {{ $yearStats['current_year'] }}</span> <span class="badge bg-secondary rounded-pill" id="count_current">{{ $yearStats['count_current'] }}</span>
                     </li>
-                    <li class="filter-item year-item" data-filter="year" data-value="since_{{ $yearStats['last_year'] }}">
-                        Since {{ $yearStats['last_year'] }} <span class="filter-count" id="count_last">{{ $yearStats['count_last'] }}</span>
+                    <li class="filter-item year-item p-1 d-flex justify-content-between align-items-center" data-filter="year" data-value="since_{{ $yearStats['last_year'] }}" style="cursor:pointer;">
+                        <span>Since {{ $yearStats['last_year'] }}</span> <span class="badge bg-secondary rounded-pill" id="count_last">{{ $yearStats['count_last'] }}</span>
                     </li>
-                    <li class="filter-item year-item" data-filter="year" data-value="since_{{ $yearStats['year_5'] }}">
-                        Since {{ $yearStats['year_5'] }} (last 5 years) <span class="filter-count" id="count_5">{{ $yearStats['count_5'] }}</span>
-                    </li>
-                    <li class="filter-item year-item" data-filter="year" data-value="since_{{ $yearStats['year_10'] }}">
-                        Since {{ $yearStats['year_10'] }} (last 10 years) <span class="filter-count" id="count_10">{{ $yearStats['count_10'] }}</span>
-                    </li>
-                    <li class="filter-item year-item" data-filter="year" data-value="since_{{ $yearStats['year_20'] }}">
-                        Since {{ $yearStats['year_20'] }} (last 20 years) <span class="filter-count" id="count_20">{{ $yearStats['count_20'] }}</span>
+                    <li class="filter-item year-item p-1 d-flex justify-content-between align-items-center" data-filter="year" data-value="since_{{ $yearStats['year_5'] }}" style="cursor:pointer;">
+                        <span>Since {{ $yearStats['year_5'] }} (5 Yrs)</span> <span class="badge bg-secondary rounded-pill" id="count_5">{{ $yearStats['count_5'] }}</span>
                     </li>
                 </ul>
             </div>
 
-            <button id="btnResetFilter" class="btn btn-sm btn-outline-danger w-100 mt-2 d-none">Reset Filters</button>
-        </div>
+            <button id="btnResetFilter" class="btn btn-sm btn-outline-danger w-100 mb-4 fw-bold shadow-sm d-none"><i class="bi bi-x-circle me-1"></i> Reset All Filters</button>
+
+            <div class="trending-widget mt-4">
+                <h6 class="fw-bold text-dark mb-3" style="font-family: 'Georgia', serif;">
+                    <i class="bi bi-graph-up-arrow text-primary me-2"></i>Trending Now
+                </h6>
+                <div class="list-group shadow-sm border-0">
+                    @forelse($mostPopular as $doc)
+                        <a href="/document/{{ $doc->document_number }}" class="list-group-item list-group-item-action p-3 border-0 border-bottom">
+                            <div class="fw-bold text-primary mb-1" style="font-size: 0.85rem; line-height: 1.4;">
+                                {{ Str::limit($doc->title, 55) }}
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span class="badge bg-light text-dark border" style="font-size: 0.7rem;">
+                                    <i class="bi bi-eye text-primary"></i> {{ number_format($doc->views) }}
+                                </span>
+                                <small class="text-muted" style="font-size: 0.7rem;">{{ $doc->pub_year }}</small>
+                            </div>
+                        </a>
+                    @empty
+                        <div class="list-group-item p-3 text-muted small text-center">No trending articles.</div>
+                    @endforelse
+                </div>
+            </div>
+            </div>
 
         <div class="col-md-9" id="mainContentColumn">
-            
-            <div class="input-group input-group-lg mb-4 search-box">
-                <input type="text" id="searchInput" class="form-control" placeholder="Search by title, author, university, journal, or publisher..." autocomplete="off">
-                <button class="btn btn-primary px-4" type="button" onclick="fetchResults(document.getElementById('searchInput').value)">Search</button>
-            </div>
-
-            <p class="text-muted small" id="resultCount">Showing latest documents...</p>
-
-            <div id="emptyState" class="d-none mt-5 text-center">
-                <div class="alert bg-white border py-5 shadow-sm rounded-4">
-                    <h3 class="fw-bold" style="color: #003366;">🔍 No Results Found</h3>
-                    <p class="text-muted">We couldn't find any documents matching your exact criteria.</p>
-                    
-                    <div class="card mt-4 mx-auto text-start border-0 bg-light" style="max-width: 500px; border-left: 4px solid #cc0000 !important;">
-                        <div class="card-body">
-                            <h6 class="fw-bold">💡 Search Tips:</h6>
-                            <ul class="small text-muted mb-0" style="line-height: 1.8;">
-                                <li>Check your spelling for any typos.</li>
-                                <li>Try using broader or fewer keywords.</li>
-                                <li><strong>Clear active filters</strong> (Year, Type, or Author) to widen the search.</li>
-                            </ul>
-                        </div>
-                    </div>
-                    <button class="btn btn-outline-danger mt-4 px-4 fw-bold" onclick="document.getElementById('btnResetFilter').click()">Reset All Filters</button>
-                </div>
-            </div>
-
-            <div id="resultsContainer"></div>
-
-            <nav aria-label="Search results pages" class="mt-4">
-                <ul id="paginationContainer" class="pagination justify-content-center"></ul>
-            </nav>
-
-            <div id="dashboardStats" class="container my-5 pt-5 border-top">
-                <div class="row g-4">
-                    
-                    <div class="col-md-6 pe-md-4">
-                        <div class="d-flex align-items-center mb-4">
-                            <div class="bg-danger bg-opacity-10 p-2 rounded me-3">
-                                <i class="bi bi-fire text-danger fs-4"></i>
-                            </div>
-                            <h4 class="fw-bold text-dark mb-0">Most Popular</h4>
-                        </div>
                         
-                        <div class="list-group list-group-flush shadow-sm rounded border">
-                            @forelse($mostPopular as $doc)
-                            <a href="/document/{{ $doc->document_number }}" class="list-group-item list-group-item-action p-3">
-                                <h6 class="mb-1 fw-bold" style="color: #003366; line-height: 1.4;">{{ $doc->title }}</h6>
-                                <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <small class="text-muted">{{ $doc->document_type ?: 'Journal' }} • {{ $doc->pub_year ?: 'N/A' }}</small>
-                                    <span class="badge bg-light text-dark border rounded-pill">
-                                        <i class="bi bi-eye me-1"></i>{{ number_format($doc->views) }} Views
-                                    </span>
+                <form action="{{ route('search.results') }}" method="GET" class="input-group input-group-lg mb-4 search-box">
+                    @if(request('type')) <input type="hidden" name="type" value="{{ request('type') }}"> @endif
+                    @if(request('year')) <input type="hidden" name="year" value="{{ request('year') }}"> @endif
+                    @if(request('publisher')) <input type="hidden" name="publisher" value="{{ request('publisher') }}"> @endif
+                    @if(request('sdg')) <input type="hidden" name="sdg" value="{{ request('sdg') }}"> @endif
+
+                    <input type="text" name="q" value="{{ request('q') }}" class="form-control" placeholder="Search by title, author, university, journal, or publisher..." autocomplete="off">
+                    <button class="btn btn-primary px-4" type="submit">Search</button>
+                </form>
+
+                @if(isset($featuredInstitutions) && $featuredInstitutions->count() > 0)
+                <div class="mb-3 p-3 bg-white rounded-3 border shadow-sm" style="border-left: 4px solid #198754 !important;">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-bank2 text-success me-2"></i>
+                        <h6 class="fw-bold mb-0 text-dark" style="font-size: 0.9rem;">
+                            Matching Institutions 
+                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill ms-1" style="font-size: 0.65rem;">{{ $featuredInstitutions->count() }}</span>
+                        </h6>
+                    </div>
+                    <div class="row g-2">
+                        @foreach($featuredInstitutions as $inst)
+                            <div class="{{ $featuredInstitutions->count() > 1 ? 'col-md-6' : 'col-12' }}">
+                                <div class="p-2 border rounded bg-light d-flex justify-content-between align-items-center">
+                                    <div class="text-truncate me-2">
+                                        <a href="/institution/{{ $inst->id }}" class="fw-bold text-decoration-none text-dark hover-underline" style="font-size: 0.85rem;">
+                                            {{ $inst->name }}
+                                        </a>
+                                        <small class="text-muted d-block" style="font-size: 0.75rem;">
+                                            📍 {{ $inst->country ?? 'Global' }} • 👥 {{ $inst->authors_count }} Researchers
+                                        </small>
+                                    </div>
+                                    <a href="/institution/{{ $inst->id }}" class="btn btn-sm btn-outline-success rounded-pill px-2 py-0 flex-shrink-0" style="font-size: 0.7rem;">
+                                        Profile
+                                    </a>
                                 </div>
-                            </a>
-                            @empty
-                            <div class="list-group-item p-4 text-center text-muted">
-                                No popular documents found yet.
                             </div>
-                            @endforelse
-                        </div>
+                        @endforeach
                     </div>
-
-                    <div class="col-md-6 ps-md-4">
-                        <div class="d-flex align-items-center mb-4">
-                            <div class="bg-warning bg-opacity-10 p-2 rounded me-3">
-                                <i class="bi bi-trophy-fill text-warning fs-4"></i>
-                            </div>
-                            <h4 class="fw-bold text-dark mb-0">Most Cited</h4>
-                        </div>
-                        
-                        <div class="list-group list-group-flush shadow-sm rounded border">
-                            @forelse($mostCited as $doc)
-                            <a href="/document/{{ $doc->document_number }}" class="list-group-item list-group-item-action p-3">
-                                <h6 class="mb-1 fw-bold" style="color: #003366; line-height: 1.4;">{{ $doc->title }}</h6>
-                                <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <small class="text-muted">{{ $doc->document_type ?: 'Journal' }} • {{ $doc->pub_year ?: 'N/A' }}</small>
-                                    <span class="badge rounded-pill bg-primary">
-                                        <i class="bi bi-chat-quote-fill me-1"></i>{{ number_format($doc->citation_count) }} Citations
-                                    </span>
-                                </div>
-                            </a>
-                            @empty
-                            <div class="list-group-item p-4 text-center text-muted">
-                                No most cited documents found yet.
-                            </div>
-                            @endforelse
-                        </div>
-                    </div>
-
                 </div>
-            </div>
+            @endif
 
-        </div>
-    </div>
-</div>
+            @if(isset($featuredAuthors) && $featuredAuthors->count() > 0)
+                <div class="mb-3 p-3 bg-white rounded-3 border shadow-sm" style="border-left: 4px solid #0d6efd !important;">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-person-workspace text-primary me-2"></i>
+                        <h6 class="fw-bold mb-0 text-dark" style="font-size: 0.9rem;">
+                            Matching Researchers 
+                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill ms-1" style="font-size: 0.65rem;">{{ $featuredAuthors->count() }}</span>
+                        </h6>
+                    </div>
+                    <div class="row g-2">
+                        @foreach($featuredAuthors as $auth)
+                            <div class="{{ $featuredAuthors->count() > 1 ? 'col-md-6' : 'col-12' }}">
+                                <div class="p-2 border rounded bg-light d-flex justify-content-between align-items-center">
+                                    <div class="text-truncate me-2">
+                                        <a href="/author/{{ $auth->id }}" class="fw-bold text-decoration-none text-primary hover-underline" style="font-size: 0.85rem;">
+                                            {{ $auth->name }}
+                                        </a>
+                                        <small class="text-muted d-block text-truncate" style="font-size: 0.75rem;">
+                                            🏛️ {{ $auth->institution->name ?? 'Independent' }} • 📄 {{ $auth->documents_count }} Papers
+                                        </small>
+                                    </div>
+                                    <a href="/author/{{ $auth->id }}" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0 flex-shrink-0" style="font-size: 0.7rem;">
+                                        Profile
+                                    </a>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+                <p class="text-muted small">
+                    Showing {{ $results->firstItem() ?? 0 }} to {{ $results->lastItem() ?? 0 }} of {{ $results->total() }} results
+                    @if(request('q')) for "<strong>{{ request('q') }}</strong>" @endif
+                </p>
 
-<script>
-    const searchInput = document.getElementById('searchInput');
-    const authorFilterInput = document.getElementById('authorFilterInput'); // Input Author
-    const resultsContainer = document.getElementById('resultsContainer');
-    const resultCount = document.getElementById('resultCount');
-    const btnResetFilter = document.getElementById('btnResetFilter');
-    
-    // Variabel Layout Cerdas
-    const filterSidebar = document.getElementById('filterSidebar');
-    const mainContentColumn = document.getElementById('mainContentColumn');
-    const emptyState = document.getElementById('emptyState');
-
-    let timeoutId;
-    let authorTimeoutId;
-    
-    // Objek penyimpan semua filter (Ditambah author)
-    let activeFilters = { type: '', year: '', author: '' };
-    const paginationContainer = document.getElementById('paginationContainer');
-
-    function fetchResults(query = '', page = 1) {
-        resultsContainer.innerHTML = '<div class="text-center my-5"><span class="spinner-border text-primary"></span><p class="text-muted mt-2">Searching database...</p></div>';
-        paginationContainer.innerHTML = ''; 
-        emptyState.classList.add('d-none'); // Sembunyikan empty state saat loading
-
-        // Rangkai URL beserta semua filter
-        let url = `/search?q=${encodeURIComponent(query)}&page=${page}`;
-        if (activeFilters.type) url += `&type=${encodeURIComponent(activeFilters.type)}`;
-        if (activeFilters.year) url += `&year=${encodeURIComponent(activeFilters.year)}`;
-        if (activeFilters.author) url += `&author=${encodeURIComponent(activeFilters.author)}`;
-
-        fetch(url)
-            .then(response => response.json())
-            .then(paginator => {
-                resultsContainer.innerHTML = ''; 
-                const data = paginator.data; 
-
-                // ==============================================
-                // FITUR BARU: UPDATE ANGKA SIDEBAR (FACETS)
-                // ==============================================
-                if (paginator.facets) {
-                    // 1. Update angka Tipe Jurnal
-                    document.querySelectorAll('.type-item').forEach(li => {
-                        let typeName = li.getAttribute('data-value');
-                        let count = paginator.facets.types[typeName] || 0; // Ambil angka baru, kalau kosong = 0
-                        
-                        li.querySelector('.type-count').innerText = count;
-                        
-                        // Sembunyikan filternya kalau angkanya 0 (Biar rapi!)
-                        if (count === 0) li.classList.add('d-none');
-                        else li.classList.remove('d-none');
-                    });
-
-                    // 2. Update angka Tahun
-                    const yearKeys = ['count_current', 'count_last', 'count_5', 'count_10', 'count_20'];
-                    yearKeys.forEach(key => {
-                        let count = paginator.facets.years[key] || 0;
-                        let span = document.getElementById(key);
-                        
-                        if(span) {
-                            span.innerText = count;
-                            // Sembunyikan filter tahun kalau angkanya 0
-                            if (count === 0) span.parentElement.classList.add('d-none');
-                            else span.parentElement.classList.remove('d-none');
-                        }
-                    });
-                }
-                // ==============================================
-                
-                let filterText = '';
-                if(activeFilters.type) filterText += ` | Type: ${activeFilters.type}`;
-                if(activeFilters.year) filterText += ` | Year: ${activeFilters.year}`;
-                if(activeFilters.author) filterText += ` | Author: ${activeFilters.author}`;
-                
-                resultCount.innerText = query 
-                    ? `Showing ${data.length} of ${paginator.total} results for "${query}" ${filterText}`
-                    : `Showing ${data.length} of ${paginator.total} documents ${filterText}`;
-
-                // ==============================================
-                // LOGIKA UI CERDAS: DASHBOARD VS PENCARIAN
-                // ==============================================
-                const dashboardStats = document.getElementById('dashboardStats');
-                
-                // KONDISI 1: User belum mencari apa-apa (Halaman Utama)
-                if (query === '' && !activeFilters.type && !activeFilters.year && !activeFilters.author) {
-                    emptyState.classList.add('d-none');
-                    if (dashboardStats) dashboardStats.classList.remove('d-none'); // TETAP MUNCUL
-                } 
-                // KONDISI 2: User mencari, tapi HASILNYA KOSONG
-                else if (data.length === 0) {
-                    filterSidebar.classList.add('d-none');
-                    mainContentColumn.classList.replace('col-md-9', 'col-md-12');
-                    emptyState.classList.remove('d-none'); // Munculkan Tips No Result
-                    if (dashboardStats) dashboardStats.classList.remove('d-none'); // TETAP MUNCUL sebagai rekomendasi!
-                    return; // Stop render list
-                } 
-                // KONDISI 3: User mencari dan ADA HASILNYA
-                else {
-                    filterSidebar.classList.remove('d-none');
-                    mainContentColumn.classList.replace('col-md-12', 'col-md-9');
-                    emptyState.classList.add('d-none');
-                    if (dashboardStats) dashboardStats.classList.remove('d-none'); // TETAP MUNCUL di bawah hasil search
-                }
-
-                // Render Card Jurnal
-                data.forEach(item => {
-                    // (KODE BARU: LINK PROFIL + MUTED UNKNOWN)
-                    let authorText = '<span class="text-muted fst-italic">Unknown Author</span>';
-                    if (item.authors && item.authors.length > 0) {
-                        authorText = item.authors.map(a => {
-                            let inst = '';
-                            if (a.institution) {
-                                inst = ` <a href="/institution/${a.institution.id}" class="text-secondary small text-decoration-none">(${a.institution.name})</a>`;
-                            }
-                            return `<a href="/author/${a.id}" class="text-decoration-none" style="color: inherit;">${a.name}</a>${inst}`;
-                        }).join('; ');
-                    }
-                    const shortAbstract = item.abstract.length > 300 ? item.abstract.substring(0, 300) + '...' : item.abstract;
-                    const doiHtml = item.doi ? `| <a href="${item.doi}" target="_blank" class="text-success text-decoration-none fw-bold">DOI</a>` : '';
-
-                    let keywordsHtml = '';
-                    if (item.keywords) {
-                        let keywordArray = item.keywords.split(',');
-                        keywordsHtml = '<div class="mt-3">' + keywordArray.map(k => {
-                            let cleanWord = k.trim();
-                            return `<a href="/results?q=${encodeURIComponent(cleanWord)}" class="badge bg-light text-secondary border text-decoration-none me-2 mb-1 hover-keyword" style="transition: 0.2s;"># ${cleanWord}</a>`;
-                        }).join('') + '</div>';
-                    }
-
-                    // ==========================================
-                    // LINK GABUNGAN: JURNAL & PUBLISHER
-                    // ==========================================
-                    const citations = item.real_citation_count || 0;
-                    const journalUrl = item.journal_title ? encodeURIComponent(item.journal_title) : '';
-
-                    let journalHtml = '';
-                    if (item.journal_title && item.publisher) {
-                        journalHtml = `<div class="small text-muted mb-1" style="font-size: 0.9em;">
-                            <i class="bi bi-journal-bookmark-fill text-secondary me-1"></i> Published in: 
-                            <a href="/journal/${journalUrl}" class="fw-bold text-decoration-none hover-underline" style="color: #003366;">
-                                ${item.journal_title} <text-secondary>by ${item.publisher}</span>
-                            </a>
-                        </div>`;
-                    }
-
-                    const card = `
+                    @forelse($results as $item)
                         <div class="result-card">
                             <div class="d-flex justify-content-between align-items-start">
-                                <a href="/document/${item.document_number}" class="doc-title">${item.title}</a>
+                                <a href="/document/{{ $item->document_number }}" class="doc-title">{{ $item->title }}</a>
                                 
                                 <div class="ms-3 flex-shrink-0">
                                     <span class="badge rounded-pill bg-white text-primary border border-primary px-2 py-1 shadow-sm" title="Data from Crossref">
-                                        <i class="bi bi-chat-quote-fill me-1"></i> Cited by ${citations}
+                                        <i class="bi bi-chat-quote-fill me-1"></i> Cited by {{ $item->citation_count ?? 0 }}
                                     </span>
                                 </div>
                             </div>
                             
-                            ${journalHtml}
+                            @if($item->journal_title && $item->publisher)
+                            <div class="small text-muted mb-1" style="font-size: 0.9em;">
+                                <i class="bi bi-journal-bookmark-fill text-secondary me-1"></i> Published in: 
+                                <a href="/journal/{{ urlencode($item->journal_title) }}" class="fw-bold text-decoration-none hover-underline" style="color: #003366;">
+                                    {{ $item->journal_title }} <span class="text-secondary">by {{ $item->publisher }}</span>
+                                </a>
+                            </div>
+                            @endif
 
-                            <div class="doc-authors mt-1">${authorText}</div>
-                            <div class="doc-abstract mt-2">${shortAbstract}</div>
+                            <div class="doc-authors mt-1">
+                                @forelse($item->authors as $author)
+                                    <a href="/author/{{ $author->id }}" class="text-decoration-none" style="color: inherit;">{{ $author->name }}</a>
+                                    @if($author->institution)
+                                        <a href="/institution/{{ $author->institution->id }}" class="text-secondary small text-decoration-none">({{ $author->institution->name }})</a>
+                                    @endif
+                                    @if(!$loop->last); @endif
+                                @empty
+                                    <span class="text-muted fst-italic">Unknown Author</span>
+                                @endforelse
+                            </div>
+                            
+                            <div class="doc-abstract mt-2">{{ Str::limit($item->abstract, 300) }}</div>
+                            
                             <div class="doc-meta mt-3">
-                                <span class="badge bg-secondary rounded-pill">${item.document_type || 'Journal'}</span>
-                                <span class="ms-2">Pub Year: ${item.pub_year || 'N/A'}</span>
-                                <span class="ms-2">| ID: ${item.document_number}</span>
-                                <span class="ms-2">${doiHtml}</span>
-                                <span class="ms-2 d-block mt-2">${keywordsHtml}</span>
+                                <span class="badge bg-secondary rounded-pill">{{ $item->document_type ?: 'Journal' }}</span>
+                                <span class="ms-2">Pub Year: {{ $item->pub_year ?: 'N/A' }}</span>
+                                <span class="ms-2">| ID: {{ $item->document_number }}</span>
+                                @if($item->doi)
+                                <span class="ms-2">| <a href="{{ $item->doi }}" target="_blank" class="text-success text-decoration-none fw-bold">DOI</a></span>
+                                @endif
+                                
+                                @if($item->keywords)
+                                <div class="mt-3">
+                                    @foreach(explode(',', $item->keywords) as $kw)
+                                        @if(trim($kw))
+                                        <a href="/results?q={{ urlencode(trim($kw)) }}" class="badge bg-light text-secondary border text-decoration-none me-2 mb-1 hover-keyword" style="transition: 0.2s;"># {{ trim($kw) }}</a>
+                                        @endif
+                                    @endforeach
+                                </div>
+                                @endif
                             </div>
                         </div>
-                    `;
-                    resultsContainer.insertAdjacentHTML('beforeend', card);
-                });
+                    @empty
+                        <div class="mt-5 text-center alert bg-white border py-5 shadow-sm rounded-4">
+                            <h3 class="fw-bold" style="color: #003366;">🔍 No Results Found</h3>
+                            <p class="text-muted">We couldn't find any documents matching your criteria.</p>
+                            <a href="{{ route('search.results') }}" class="btn btn-outline-danger mt-3 fw-bold">Reset All Filters</a>
+                        </div>
+                    @endforelse
 
-                renderPagination(paginator);
-            })
-            .catch(error => {
-                resultsContainer.innerHTML = '<div class="text-danger">An error occurred while loading data.</div>';
-            });
-    }
+                    <div class="mt-4 d-flex justify-content-center">
+                        {{ $results->links('pagination::bootstrap-5') }}
+                    </div>
 
-    // Fungsi Menggambar Tombol Paginasi (SAMA PERSIS DENGAN KODEMU)
-    function renderPagination(paginator) {
-        if (paginator.last_page <= 1) return; 
+                    @if(!request('q') && !request('type') && !request('year') && !request('publisher') && !request('sdg') && !request('author'))
+                    <div id="dashboardStats" class="container my-5 pt-5 border-top">
+                        <div class="row g-4">
+                            </div>
+                    </div>
+                    @endif
 
-        let html = '';
-        const currentPage = paginator.current_page;
-        const lastPage = paginator.last_page;
-
-        html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="#" data-page="${currentPage - 1}">&laquo; Prev</a>
-                 </li>`;
-
-        let startPage = Math.max(1, currentPage - 2);
-        let endPage = Math.min(lastPage, currentPage + 2);
-
-        for (let i = startPage; i <= endPage; i++) {
-            html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
-                        <a class="page-link" href="#" data-page="${i}">${i}</a>
-                     </li>`;
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // Fungsi untuk memperbarui URL saat filter diklik
+    function updateUrlFilter(key, value) {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Toggle: Jika filter yang sama diklik lagi, hapus filter tersebut
+        if (urlParams.get(key) === value) {
+            urlParams.delete(key);
+        } else {
+            urlParams.set(key, value);
         }
-
-        html += `<li class="page-item ${currentPage === lastPage ? 'disabled' : ''}">
-                    <a class="page-link" href="#" data-page="${currentPage + 1}">Next &raquo;</a>
-                 </li>`;
-
-        paginationContainer.innerHTML = html;
-
-        document.querySelectorAll('.page-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                let parentLi = this.parentElement;
-                
-                if (parentLi.classList.contains('disabled') || parentLi.classList.contains('active')) return;
-                
-                let targetPage = this.getAttribute('data-page');
-                fetchResults(searchInput.value, targetPage);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-        });
+        
+        urlParams.delete('page'); // Reset ke halaman 1
+        window.location.search = urlParams.toString(); // Reload halaman dengan URL baru
     }
 
-    // --- LOGIKA KETIKAN FILTER AUTHOR (BARU) ---
-    authorFilterInput.addEventListener('input', function() {
-        clearTimeout(authorTimeoutId);
-        activeFilters.author = this.value;
-        
-        // Munculkan tombol reset kalau author diketik
-        if(this.value.length > 0) btnResetFilter.classList.remove('d-none');
-        
-        authorTimeoutId = setTimeout(() => {
-            fetchResults(searchInput.value);
-        }, 500); 
-    });
-
-    // --- LOGIKA KLIK FILTER TAHUN & TIPE ---
+    // 1. Klik Item Filter List (Type, Year, Publisher)
     document.querySelectorAll('.filter-item').forEach(item => {
         item.addEventListener('click', function() {
-            const filterType = this.getAttribute('data-filter'); 
-            const filterValue = this.getAttribute('data-value');
-
-            if (this.classList.contains('active')) {
-                this.classList.remove('active');
-                activeFilters[filterType] = '';
-            } else {
-                document.querySelectorAll(`.filter-item[data-filter="${filterType}"]`).forEach(el => el.classList.remove('active'));
-                this.classList.add('active');
-                activeFilters[filterType] = filterValue;
-            }
-
-            // Tampilkan tombol Reset
-            if (activeFilters.type || activeFilters.year || activeFilters.author) {
-                btnResetFilter.classList.remove('d-none');
-            } else {
-                btnResetFilter.classList.add('d-none');
-            }
-
-            fetchResults(searchInput.value);
+            updateUrlFilter(this.getAttribute('data-filter'), this.getAttribute('data-value'));
         });
     });
 
-    // --- TOMBOL RESET (DIPERBARUI) ---
-    btnResetFilter.addEventListener('click', function() {
-        document.querySelectorAll('.filter-item').forEach(el => el.classList.remove('active'));
-        authorFilterInput.value = ''; // Kosongkan input author
-        activeFilters = { type: '', year: '', author: '' };
-        this.classList.add('d-none');
-        fetchResults(searchInput.value);
-    });
-
-    // --- LOAD AWAL & KETIKAN PENCARIAN ---
-    const urlParams = new URLSearchParams(window.location.search);
-    const initialQuery = urlParams.get('q') || '';
-    searchInput.value = initialQuery;
-    fetchResults(initialQuery);
-
-    searchInput.addEventListener('input', function() {
-        clearTimeout(timeoutId);
-        const query = this.value;
-        timeoutId = setTimeout(() => {
-            fetchResults(query);
-        }, 400); 
-    });
-
-    // --- LOGIKA TOMBOL SHOW MORE / SHOW LESS ---
-    document.querySelectorAll('.toggle-more').forEach(btn => {
+    // 2. Klik Tombol Badge SDG
+    document.querySelectorAll('.filter-sdg').forEach(btn => {
         btn.addEventListener('click', function() {
-            const targetClass = this.getAttribute('data-target');
-            const hiddenItems = document.querySelectorAll(targetClass);
-            let isHidden = hiddenItems[0].classList.contains('d-none');
-            
-            if (isHidden) {
-                hiddenItems.forEach(item => item.classList.remove('d-none'));
-                this.innerText = '- Show Less';
-            } else {
-                hiddenItems.forEach(item => {
-                    item.classList.add('d-none');
-                    if(item.classList.contains('active')) {
-                        item.classList.remove('active');
-                        activeFilters[item.getAttribute('data-filter')] = '';
-                        btnResetFilter.classList.add('d-none');
-                        fetchResults(searchInput.value); 
-                    }
-                });
-                this.innerText = '+ Show More';
+            updateUrlFilter('sdg', this.getAttribute('data-sdg'));
+        });
+    });
+
+    // 3. Input Author via Tombol Enter
+    const authorInput = document.getElementById('authorFilterInput');
+    if (authorInput) {
+        // Isi nilai dari URL jika ada
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('author')) {
+            authorInput.value = urlParams.get('author');
+        }
+
+        authorInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                updateUrlFilter('author', this.value.trim());
             }
         });
+    }
+
+    // 4. Tombol Reset All Filters
+    const btnReset = document.getElementById('btnResetFilter');
+    if (btnReset) {
+        // Munculkan tombol reset jika ada query di URL
+        if (window.location.search.length > 1) {
+            btnReset.classList.remove('d-none');
+        }
+        btnReset.addEventListener('click', function() {
+            window.location.href = "{{ route('search.results') }}";
+        });
+    }
+
+    // 5. Tandai Filter Aktif di Sidebar
+    const currentParams = new URLSearchParams(window.location.search);
+    document.querySelectorAll('.filter-item').forEach(item => {
+        const filterType = item.getAttribute('data-filter');
+        const filterVal = item.getAttribute('data-value');
+        if (currentParams.get(filterType) === filterVal) {
+            item.classList.add('active');
+        }
     });
 </script>
+
 @include('partials.footer')
 </body>
 </html>

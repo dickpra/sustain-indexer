@@ -233,7 +233,7 @@ class BetaSubmitController extends Controller
     // ==========================================
     public function storeFinal(Request $request)
     {
-        // 1. Validasi input dari form review (Tanpa pdf_file)
+        // 1. Validasi input super ketat! (Otomatis membalas JSON 422 jika gagal)
         $request->validate([
             'title' => 'required|string',
             'abstract' => 'required|string',
@@ -242,72 +242,62 @@ class BetaSubmitController extends Controller
             'submitter_first_name' => 'required|string',
             'submitter_last_name' => 'required|string',
             'submitter_email' => 'required|email',
+            'doi' => ['required', 'string', 'regex:/^https:\/\/doi\.org\/10\.\d{4,9}\/[-._;()\/:A-Z0-9]+$/i'],
+            'pages' => 'required|integer|min:1',
+            'reference_count' => 'required|integer|min:0',
             'authors' => 'required|array|min:1',
             'authors.*.name' => 'required|string',
             'authors.*.email' => 'nullable|email', 
         ]);
 
-        // 2. Benteng Duplikasi Final
+        // 2. Benteng Duplikasi Final (🔥 UBAH JADI JSON)
         $existingDoc = \App\Models\Document::where('title', $request->title)->first();
         if ($existingDoc) {
             if (!$existingDoc->is_verified) {
-                return redirect('/receipt/' . $existingDoc->document_number)
-                    ->with('error', 'This document title has already been submitted and is awaiting email verification.');
+                return response()->json([
+                    'status' => 'pending_duplicate',
+                    'confirmation_id' => $existingDoc->document_number
+                ], 200);
             } else {
-                return redirect('/submit-beta')
-                    ->with('error', 'System Rejection: Document with title "' . $request->title . '" has already been officially indexed.');
+                return response()->json([
+                    'error' => 'System Rejection: Document with title "' . $request->title . '" has already been officially indexed.'
+                ], 422);
             }
         }
 
         // =======================================================
-        // 🔥 JURUS SITASI CROSSREF (ANTI-SSL BLOCK & TIMEOUT) 🔥
+        // 🔥 JURUS SITASI CROSSREF 
         // =======================================================
-        $doi = null;
-        $citationCount = 0; // Default 0
+        $doi = $request->input('doi'); 
+        $citationCount = 0; 
         
-        if (!empty($request->doi)) {
-            $doiPattern = '/10\.\d{4,9}\/[-._;()\/:A-Z0-9]+/i';
-            
-            if (preg_match($doiPattern, $request->doi, $matches)) {
-                $rawDoi = $matches[0]; 
-                $doi = 'https://doi.org/' . $rawDoi; 
+        if (preg_match('/10\.\d{4,9}\/[-._;()\/:A-Z0-9]+/i', $doi, $matches)) {
+            $rawDoi = $matches[0]; 
 
-                try {
-                    // 🔥 PERBAIKAN 1: withoutVerifying() untuk bypass SSL localhost
-                    // 🔥 PERBAIKAN 2: timeout(10) biar gak keburu diputus
-                    $response = \Illuminate\Support\Facades\Http::withoutVerifying()
-                                    ->timeout(10)
-                                    ->get('https://api.crossref.org/works/' . $rawDoi);
-                    
-                    if ($response->successful()) {
-                        $citationCount = $response->json('message.is-referenced-by-count') ?? 0;
-                        
-                        // CCTV LOG: Biar kita tahu sukses apa enggak!
-                        \Illuminate\Support\Facades\Log::info("✅ BERHASIL CROSSREF! DOI: {$rawDoi} | Sitasi: {$citationCount}");
-                    } else {
-                        // CCTV LOG: Kalau Crossref nolak (Error 404/403)
-                        \Illuminate\Support\Facades\Log::error("❌ CROSSREF NOLAK! Status: " . $response->status());
-                    }
-                } catch (\Exception $e) {
-                    // CCTV LOG: Kalau server down atau koneksi putus
-                    \Illuminate\Support\Facades\Log::error("⚠️ CROSSREF EXCEPTION: " . $e->getMessage());
+            try {
+                $response = \Illuminate\Support\Facades\Http::withoutVerifying()
+                                ->timeout(10)
+                                ->get('https://api.crossref.org/works/' . $rawDoi);
+                
+                if ($response->successful()) {
+                    $citationCount = $response->json('message.is-referenced-by-count') ?? 0;
+                    \Illuminate\Support\Facades\Log::info("✅ BERHASIL CROSSREF! DOI: {$rawDoi} | Sitasi: {$citationCount}");
+                } elseif ($response->status() === 404) {
+                    // 🔥 UBAH JADI JSON (Menolak form tanpa menghilangkan halaman)
+                    return response()->json([
+                        'error' => 'System Rejection: DOI "' . $doi . '" is not found in Crossref database. Please check the DOI'
+                    ], 422);
                 }
-            } else {
-                $doi = $request->doi; 
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("⚠️ CROSSREF EXCEPTION: " . $e->getMessage());
             }
-        } else {
-            \Illuminate\Support\Facades\Log::warning("⚠️ DOI KOSONG DARI FORM, SITASI DI-SKIP!");
         }
-        // =======================================================
-        // =======================================================
 
         // 3. Simpan ke Tabel Documents
-        $docNumber = 'IDX-' . rand(100000, 999999); // 🔥 UBAH JADI IDX- + 6 ANGKA ACAK 🔥
+        $docNumber = 'IDX-' . rand(100000, 999999); 
 
         $originalKeywords = trim($request->input('keywords', ''));
-        $sdgsString = implode(', ', $request->input('sdgs')); // Gabungkan array SDG jadi 1 kalimat
-        
-        // Kalau keyword aslinya kosong, pakai SDG saja. Kalau ada, gabungkan pakai koma.
+        $sdgsString = implode(', ', $request->input('sdgs')); 
         $finalKeywords = empty($originalKeywords) ? $sdgsString : $originalKeywords . ', ' . $sdgsString;
 
         $document = \App\Models\Document::create([
@@ -331,22 +321,18 @@ class BetaSubmitController extends Controller
             'verification_token' => \Illuminate\Support\Str::random(40),
         ]);
 
-        // =========================================================
-        // 🔥 FITUR BARU: LANGSUNG CATAT KE TABEL HISTORY SAAT SUBMIT (VERSI AI)
-        // =========================================================
         \Illuminate\Support\Facades\DB::table('citation_histories')->insert([
             'document_id' => $document->id,
-            'citation_count' => $citationCount, // Angka yang didapat AI dari Crossref
+            'citation_count' => $citationCount, 
             'year' => date('Y'),
             'month' => date('m'),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        // 4. Simpan Authors & Institusi (Pivot Table)
+        // 4. Simpan Authors & Institusi
         if ($request->has('authors')) {
             $authorIdsToAttach = [];
-
             foreach ($request->authors as $authorData) {
                 $institutionId = null;
                 
@@ -357,7 +343,6 @@ class BetaSubmitController extends Controller
                     );
                     $institutionId = $institution->id;
 
-                    // Fitur Admin Siluman: Update Koordinat Map
                     $isManualOverride = isset($authorData['manual_map']) && $authorData['manual_map'] == "1";
                     $isEmptyInDB = !$institution->latitude && isset($authorData['lat']);
 
@@ -370,42 +355,38 @@ class BetaSubmitController extends Controller
                     }
                 }
 
-                // Logika Deduplikasi Cerdas
                 $email = !empty($authorData['email']) ? $authorData['email'] : null;
 
                 if ($email) {
                     $author = \App\Models\Author::firstOrCreate(
                         ['email' => $email], 
-                        [
-                            'name' => $authorData['name'],
-                            'institution_id' => $institutionId,
-                            'country' => $authorData['country'] ?? 'Unknown',
-                        ]
+                        ['name' => $authorData['name'], 'institution_id' => $institutionId, 'country' => $authorData['country'] ?? 'Unknown']
                     );
                 } else {
                     $author = \App\Models\Author::firstOrCreate(
                         ['name' => $authorData['name']], 
-                        [
-                            'email' => null,
-                            'institution_id' => $institutionId,
-                            'country' => $authorData['country'] ?? 'Unknown',
-                        ]
+                        ['email' => null, 'institution_id' => $institutionId, 'country' => $authorData['country'] ?? 'Unknown']
                     );
                 }
-
                 $authorIdsToAttach[] = $author->id; 
             }
-
             $document->authors()->attach($authorIdsToAttach);
         }
 
         // 5. Kirim Email Verifikasi
         dispatch(function () use ($document) {
-            \Illuminate\Support\Facades\Mail::to($document->submitter_email)
-                ->send(new \App\Mail\VerifyDocumentEmail($document));
+            try {
+                \Illuminate\Support\Facades\Mail::to($document->submitter_email)
+                    ->send(new \App\Mail\VerifyDocumentEmail($document));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Email gagal dikirim: ' . $e->getMessage());
+            }
         })->afterResponse();
 
-        // 6. Redirect ke Halaman Tanda Terima
-        return redirect('/receipt/' . $document->document_number)->with('success', 'AI Extracted data saved! Please check your email to verify and activate the index.');
+        // 6. Redirect Sukses (🔥 UBAH JADI JSON)
+        return response()->json([
+            'status' => 'success',
+            'confirmation_id' => $document->document_number
+        ], 200);
     }
 }

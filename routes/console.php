@@ -14,7 +14,6 @@ use Illuminate\Console\Scheduling\Schedule;
 | simple approach to interacting with each command's IO methods.
 |
 */
-Schedule::command('sustaindex:sync-citations')->weekly();
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');

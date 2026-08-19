@@ -210,18 +210,23 @@
                     
                     <div class="row mb-4">
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">DOI Link</label>
-                            <input type="text" name="doi" class="form-control" value="{{ $extractedData['doi'] ?? '' }}">
+                            <label class="form-label">DOI Link <span class="text-danger">*</span></label>
+                            <input type="text" name="doi" id="inputDoiBeta" class="form-control" value="{{ $extractedData['doi'] ?? '' }}" placeholder="https://doi.org/10.xxxx/yyyy" required>
+                            <small class="text-muted" style="font-size: 11px;">Must be a full https://doi.org/... URL</small>
+                            
+                            <div id="doiWarningBeta" class="text-danger small mt-1 d-none">
+                                <i class="bi bi-exclamation-triangle-fill"></i> DOI Format Error. Please ensure it starts with <strong>https://doi.org/</strong>.
+                            </div>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Total Pages</label>
-                            <input type="number" name="pages" class="form-control" value="{{ $extractedData['pages'] ?? '' }}">
+                            <label class="form-label">Total Pages <span class="text-danger">*</span></label>
+                            <input type="number" name="pages" class="form-control" value="{{ $extractedData['pages'] ?? '' }}" placeholder="e.g., 15" required>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Reference Count</label>
-                            <input type="number" name="reference_count" class="form-control" placeholder="e.g., 45">
+                            <label class="form-label">Reference Count <span class="text-danger">*</span></label>
+                            <input type="number" name="reference_count" class="form-control" value="{{ $extractedData['reference_count'] ?? '' }}" placeholder="e.g., 45" required>
                         </div>
-                    </div> 
+                    </div>
 
                     <div class="section-title">2. Authors & Affiliations</div>
                     <p class="text-muted small mb-3">Email addresses are required to connect documents to correct author profiles.</p>

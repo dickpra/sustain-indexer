@@ -9,11 +9,23 @@ class HomeController extends Controller
 {
     public function index()
     {
+        // 1. Data Tipe Dokumen
         $docTypes = Document::where('is_verified', true)
                         ->select('document_type', DB::raw('count(*) as total'))
                         ->groupBy('document_type')
                         ->get();
 
+        // 2. 🔥 TAMBAHAN: Data Top 5 Publisher untuk Filter
+        $topPublishers = Document::where('is_verified', true)
+                        ->whereNotNull('publisher')
+                        ->where('publisher', '!=', '')
+                        ->select('publisher', DB::raw('count(*) as total'))
+                        ->groupBy('publisher')
+                        ->orderBy('total', 'desc')
+                        ->take(5)
+                        ->get();
+
+        // 3. Data Statistik Tahun
         $currentYear = date('Y');
         $yearStats = [
             'current_year' => $currentYear,
@@ -28,9 +40,10 @@ class HomeController extends Controller
             'count_20' => Document::where('is_verified', true)->where('pub_year', '>=', $currentYear - 19)->count(),
         ];
 
+        // 4. Data Trending / Leaderboards
         $mostCited = Document::where('is_verified', true)->orderBy('citation_count', 'desc')->take(3)->get();
         $mostPopular = Document::where('is_verified', true)->orderBy('views', 'desc')->take(3)->get();
 
-        return view('index', compact('docTypes', 'yearStats', 'mostCited', 'mostPopular'));
+        return view('index', compact('docTypes', 'topPublishers', 'yearStats', 'mostCited', 'mostPopular'));
     }
 }

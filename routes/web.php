@@ -18,36 +18,38 @@ use App\Http\Controllers\JournalController;
 // BERANDA & PENCARIAN
 // ==========================================
 Route::get('/', function () {
-    // 1. Data Leaderboards (Bawaan)
-    $mostCited = \App\Models\Document::where('is_verified', true)
-                 ->orderBy('citation_count', 'desc')
-                 ->take(3)
-                 ->get();
+    // 1. Top Articles (Most Cited & Most Popular)
+    $mostCited = \App\Models\Document::where('is_verified', true)->orderBy('citation_count', 'desc')->take(3)->get();
+    $mostPopular = \App\Models\Document::where('is_verified', true)->orderBy('views', 'desc')->take(3)->get();
 
-    $mostPopular = \App\Models\Document::where('is_verified', true)
-                   ->orderBy('views', 'desc')
-                   ->take(3)
-                   ->get();
+    // 2. 🔥 TOP RESEARCHERS
+    $topResearchers = \App\Models\Author::withCount('documents')
+                        ->orderBy('documents_count', 'desc')
+                        ->take(5)
+                        ->get();
 
-    // 2. 🔥 DATA STATISTIK GLOBAL (BARU)
+    // 3. 🔥 TOP INSTITUTIONS
+    $topInstitutions = \App\Models\Institution::withCount('authors')
+                         ->orderBy('authors_count', 'desc')
+                         ->take(5)
+                         ->get();
+
+    // 4. Global Stats
     $totalDocuments = \App\Models\Document::count();
     $totalAuthors = \App\Models\Author::count();
     $totalInstitutions = \App\Models\Institution::count();
     $totalCountries = \App\Models\Institution::whereNotNull('country')->distinct('country')->count();
 
-    // 3. Kirim semua variabel ke view 'home'
     return view('home', compact(
-        'mostCited', 
-        'mostPopular', 
-        'totalDocuments', 
-        'totalAuthors', 
-        'totalInstitutions', 
-        'totalCountries'
+        'mostCited', 'mostPopular', 'topResearchers', 'topInstitutions',
+        'totalDocuments', 'totalAuthors', 'totalInstitutions', 'totalCountries'
     )); 
 });
 
-Route::get('/results', [HomeController::class, 'index']); // Menggantikan DocumentController@index
-Route::get('/search', [SearchController::class, 'search']);
+// Route::get('/results', [HomeController::class, 'index']); // Menggantikan DocumentController@index
+// Route::get('/search', [SearchController::class, 'search']);
+
+Route::get('/results', [SearchController::class, 'search'])->name('search.results');
 
 // ==========================================
 // 1. FITUR EDIT DOKUMEN (Letakkan di ATAS rute show!)

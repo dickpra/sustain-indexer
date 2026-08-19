@@ -24,8 +24,8 @@ class PdfSubmissionController extends Controller
             'submitter_first_name' => 'required|string',
             'submitter_last_name' => 'required|string',
             'submitter_email' => 'required|email',
-            'title' => 'required|string',
-            'abstract' => 'required|string',
+            'title' => 'required|string|min:20',
+            'abstract' => 'required|string|min:50',
             'keywords' => 'nullable|string',
             'sdgs' => 'required|array|min:1',
             'document_type' => 'required|string',
@@ -33,6 +33,7 @@ class PdfSubmissionController extends Controller
             'pages' => 'nullable|integer',
             'reference_count' => 'nullable|integer',
             'pdf_file' => 'required|mimes:pdf|max:102400',
+            'doi' => ['required', 'string', 'regex:/^https:\/\/doi\.org\/10\.\d{4,9}\/[-._;()\/:A-Z0-9]+$/i'],
             'authors' => 'required|array|min:1', 
             'authors.*.name' => 'required|string', 
             'authors.*.email' => 'required|email',
@@ -95,7 +96,9 @@ class PdfSubmissionController extends Controller
             // DEBUGGING: Kita keluarkan potongan teksnya di error biar ketahuan apa yang dibaca mesin!
             $pdfSnippet = substr($superCleanPdfText, 0, 50) . '...';
             return response()->json([
-                'error' => 'Validation Rejected: The title was not found exactly in the PDF file. (System read: ' . $pdfSnippet . ')'
+                'error' => 'Validation Rejected: The title was not found exactly in the PDF file. 
+                Please ensure the title in the submission matches the title in the PDF.
+                '
             ], 422);
         }
 
@@ -112,46 +115,34 @@ class PdfSubmissionController extends Controller
         }
 
         // =======================================================
-        // 6. EKSTRAKSI DOI & AUTO-FETCH SITASI (CROSSREF API)
+        // 6. VALIDASI DOI MANUAL KE CROSSREF API
         // =======================================================
-        $doi = null;
-        $citationCount = 0; // Default jumlah sitasi adalah 0
+        $doi = $request->input('doi'); // Ini isinya full URL (https://doi.org/10.xxxx) karena sudah lulus validasi di atas
+        $citationCount = 0; 
         
-        $doiPattern = '/10\.\d{4,9}\/[-._;()\/:A-Z0-9]+/i';
-        
-        if (preg_match($doiPattern, $rawText, $matches)) {
-            $rawDoi = $matches[0]; // Format asli: 10.xxxx/yyyy
-            $doi = 'https://doi.org/' . $rawDoi; // Format Link URL
+        // Kita potong/ekstrak bagian "10.xxx" nya saja KHUSUS untuk dikirim ke API Crossref
+        if (preg_match('/10\.\d{4,9}\/[-._;()\/:A-Z0-9]+/i', $doi, $matches)) {
+            $cleanRawDoi = $matches[0]; // Hasil potongan: 10.xxxx/yyyy
 
-            // 🔥 Kita tembak API Crossref diem-diem buat validasi & nyuri data sitasi!
             try {
-                $response = \Illuminate\Support\Facades\Http::timeout(5)->get('https://api.crossref.org/works/' . $rawDoi);
+                // Tembak API Crossref menggunakan hasil potongan
+                $response = \Illuminate\Support\Facades\Http::timeout(5)->get('https://api.crossref.org/works/' . $cleanRawDoi);
                 
                 if ($response->successful()) {
-                    // Ambil angka sitasi dari JSON balasan Crossref
                     $citationCount = $response->json('message.is-referenced-by-count') ?? 0;
                 } 
-                // 🚨 SATPAM 1: TOLAK KALAU CROSSREF BILANG DOI PALSU/TIDAK ADA (404)
                 elseif ($response->status() === 404) {
-                    \Illuminate\Support\Facades\Storage::delete($path); // Hapus file temp
+                    \Illuminate\Support\Facades\Storage::delete($path); // Hapus PDF temp
                     return response()->json([
-                        'error' => 'System Rejection: The DOI (' . $rawDoi . ') found in the PDF is NOT registered in the Crossref database. Submission denied.'
+                        'error' => 'System Rejection: DOI (' . $cleanRawDoi . ') is not registered in Crossref database. Submission is rejected.'
                     ], 422);
                 }
             } catch (\Exception $e) {
-                // Kalau API Crossref lagi down, diamkan saja (tetap 0). Jangan ganggu proses submit.
-                \Illuminate\Support\Facades\Log::warning("Gagal ambil sitasi Crossref untuk DOI: " . $rawDoi);
+                // Crossref Down/Timeout
+                \Illuminate\Support\Facades\Log::warning("Gagal ambil sitasi Crossref untuk DOI: " . $cleanRawDoi);
             }
-        } else {
-            // 🚨 SATPAM 2: TOLAK KALAU MESIN TIDAK MENEMUKAN TULISAN DOI DI DALAM PDF
-            \Illuminate\Support\Facades\Storage::delete($path); // Hapus file temp
-            return response()->json([
-                'error' => 'System Rejection: No valid DOI (Digital Object Identifier) was found inside the uploaded PDF document. All submissions must include a registered DOI.'
-            ], 422);
         }
         // =======================================================
-        // =======================================================
-
         // =========================================================
         // 7. TRANSAKSI DATABASE (ANTI-GAGAL & DEDUPLIKASI)
         // =========================================================

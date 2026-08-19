@@ -13,7 +13,7 @@
                         <i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>Upload PDF
                     </a>
                 </li>
-                <li><hr class="dropdown-divider"></li>
+                {{-- <li><hr class="dropdown-divider"></li> --}}
                 {{-- <li>
                     <a class="dropdown-item py-2 fw-medium text-dark" href="/submit-xml" style="margin-left: 0; border: none;">
                         <i class="bi bi-filetype-xml text-success me-2"></i>Upload OJS XML

@@ -246,50 +246,83 @@
         });
     </script>
     <div class="container stats-container" style="margin-top: 50px; margin-bottom: 50px;">
-        <div class="row justify-content-center text-start">
-            
-            <div class="col-md-5 pe-md-3 stats-col">
-                <div class="d-flex align-items-center mb-3">
-                    <i class="bi bi-fire text-danger fs-5 me-2"></i>
-                    <h5 class="fw-bold text-dark mb-0">Most Popular</h5>
-                </div>
-                
-                <div class="list-group list-group-flush shadow-sm rounded border">
-                    @forelse($mostPopular as $doc)
-                    <a href="/document/{{ $doc->document_number }}" class="list-group-item list-group-item-action p-3">
-                        <h6 class="mb-1 fw-bold text-primary" style="font-size: 0.95rem; line-height: 1.4;">{{ $doc->title }}</h6>
-                        <div class="d-flex justify-content-between align-items-center mt-2">
-                            <small class="text-muted" style="font-size: 0.8rem;">{{ $doc->document_type ?: 'Journal' }}</small>
-                            <span class="badge bg-light text-dark border rounded-pill" style="font-size: 0.75rem;">
-                                <i class="bi bi-eye me-1"></i>{{ number_format($doc->views) }} Views
-                            </span>
-                        </div>
-                    </a>
-                    @empty
-                    <div class="list-group-item p-4 text-center text-muted small">No popular documents found yet.</div>
-                    @endforelse
-                </div>
-            </div>
+        <div class="text-center mb-4">
+            <h3 class="fw-bold text-dark" style="font-family: 'Georgia', serif;">🏆 SustaIndex Leaderboards</h3>
+            <p class="text-muted small">Top performing articles, researchers, and institutions in our index.</p>
+        </div>
 
-            <div class="col-md-5 ps-md-3 stats-col">
+        <div class="row g-4">
+            
+            <div class="col-lg-4 col-md-6">
                 <div class="d-flex align-items-center mb-3">
                     <i class="bi bi-trophy-fill text-warning fs-5 me-2"></i>
-                    <h5 class="fw-bold text-dark mb-0">Most Cited</h5>
+                    <h5 class="fw-bold text-dark mb-0">Top Articles</h5>
                 </div>
-                
                 <div class="list-group list-group-flush shadow-sm rounded border">
                     @forelse($mostCited as $doc)
                     <a href="/document/{{ $doc->document_number }}" class="list-group-item list-group-item-action p-3">
-                        <h6 class="mb-1 fw-bold text-primary" style="font-size: 0.95rem; line-height: 1.4;">{{ $doc->title }}</h6>
+                        <h6 class="mb-1 fw-bold text-primary" style="font-size: 0.9rem; line-height: 1.3;">{{ $doc->title }}</h6>
                         <div class="d-flex justify-content-between align-items-center mt-2">
-                            <small class="text-muted" style="font-size: 0.8rem;">{{ $doc->document_type ?: 'Journal' }}</small>
-                            <span class="badge bg-primary rounded-pill" style="font-size: 0.75rem;">
+                            <small class="text-muted" style="font-size: 0.75rem;">{{ $doc->journal_title ?: 'Journal' }}</small>
+                            <span class="badge bg-primary rounded-pill" style="font-size: 0.7rem;">
                                 <i class="bi bi-chat-quote-fill me-1"></i>{{ number_format($doc->citation_count) }} Citations
                             </span>
                         </div>
                     </a>
                     @empty
-                    <div class="list-group-item p-4 text-center text-muted small">No most cited documents found yet.</div>
+                    <div class="list-group-item p-3 text-center text-muted small">No top articles yet.</div>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-person-workspace text-primary fs-5 me-2"></i>
+                    <h5 class="fw-bold text-dark mb-0">Top Researchers</h5>
+                </div>
+                <div class="list-group list-group-flush shadow-sm rounded border">
+                    @forelse($topResearchers as $author)
+                    <a href="/author/{{ $author->id }}" class="list-group-item list-group-item-action p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.9rem;">{{ $author->name }}</h6>
+                                <small class="text-muted d-block" style="font-size: 0.75rem;">
+                                    🏛️ {{ $author->institution->name ?? 'Independent Researcher' }}
+                                </small>
+                            </div>
+                            <span class="badge bg-light text-dark border rounded-pill" style="font-size: 0.7rem;">
+                                📄 {{ $author->documents_count }} Papers
+                            </span>
+                        </div>
+                    </a>
+                    @empty
+                    <div class="list-group-item p-3 text-center text-muted small">No researchers found.</div>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-12">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-bank2 text-success fs-5 me-2"></i>
+                    <h5 class="fw-bold text-dark mb-0">Top Institutions</h5>
+                </div>
+                <div class="list-group list-group-flush shadow-sm rounded border">
+                    @forelse($topInstitutions as $inst)
+                    <a href="/institution/{{ $inst->id }}" class="list-group-item list-group-item-action p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.9rem;">{{ $inst->name }}</h6>
+                                <small class="text-muted d-block" style="font-size: 0.75rem;">
+                                    🌍 {{ $inst->country ?? 'Country Unknown' }}
+                                </small>
+                            </div>
+                            <span class="badge bg-light text-dark border rounded-pill" style="font-size: 0.7rem;">
+                                👥 {{ $inst->authors_count }} Researchers
+                            </span>
+                        </div>
+                    </a>
+                    @empty
+                    <div class="list-group-item p-3 text-center text-muted small">No institutions found.</div>
                     @endforelse
                 </div>
             </div>

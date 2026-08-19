@@ -23,12 +23,12 @@
                             </a>
                         </li>
                         <li><hr class="dropdown-divider"></li>
-                        <li>
+                        {{-- <li>
                             <a class="dropdown-item py-2 fw-medium text-dark" href="/submit-xml" style="margin-left: 0; border: none;">
                                 <i class="bi bi-filetype-xml text-success me-2"></i>Upload OJS XML
                             </a>
                         </li>
-                        <li><hr class="dropdown-divider"></li>
+                        <li><hr class="dropdown-divider"></li> --}}
                         <li>
                             <a class="dropdown-item py-2" href="/submit-beta">
                                 <i class="bi bi-robot text-primary me-2"></i>

@@ -170,15 +170,17 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                    <label class="form-label">DOI (Digital Object Identifier) <span class="text-danger">*</span></label>
-                    <input type="text" name="doi" id="inputDoi" class="form-control" placeholder="Contoh: 10.1234/sustaindex.v1i1" required>
-                    
-                    <div id="doiWarning" class="text-danger small mt-1 d-none">
-                        <i class="bi bi-exclamation-triangle-fill"></i> Format DOI tidak valid! Wajib diawali dengan "10." (Contoh: 10.1234/abc)
-                    </div>
-                    
-                    <div id="doiSuccess" class="text-success small mt-1 d-none">
+                    <div class="mb-4">
+                        <label class="form-label">DOI (Digital Object Identifier) <span class="text-danger">*</span></label>
+                        <input type="text" name="doi" id="inputDoi" class="form-control" placeholder="Example: https://doi.org/10.1234/abc" required>
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> The DOI must start with "https://doi.org/10." and be a valid DOI link.
+                        </small>
+                        
+                        <div id="doiWarning" class="text-danger small mt-1 d-none">
+                            <i class="bi bi-exclamation-triangle-fill"></i> Invalid DOI format! Must start with "https://doi.org/10."
+                        </div>
+                        <div id="doiSuccess" class="text-success small mt-1 d-none">
                             <i class="bi bi-check-circle-fill"></i> Format DOI valid!
                         </div>
                     </div>
@@ -272,6 +274,7 @@
                                 <tr><th style="color:#003366;">Abstract</th><td id="rev_abstract" style="text-align: justify; font-size: 0.9em;"></td></tr>
                                 
                                 <tr><th style="color:#003366;">SDGs</th><td id="rev_sdgs"></td></tr>
+                                <tr><th style="color:#003366;">DOI (Digital Object Identifier)</th><td id="rev_doi" class="fw-bold text-primary font-monospace"></td></tr>
                                 
                                 <tr><th style="color:#003366;">Keywords</th><td id="rev_keywords"></td></tr>
                                 <tr><th style="color:#003366;">Type & Year</th><td id="rev_type_year"></td></tr>
@@ -461,6 +464,7 @@
         document.getElementById('rev_title').innerText = formData.get('title');
         document.getElementById('rev_abstract').innerText = formData.get('abstract');
         document.getElementById('rev_keywords').innerText = formData.get('keywords') || '-';
+        document.getElementById('rev_doi').innerText = formData.get('doi');
         document.getElementById('rev_type_year').innerText = formData.get('document_type') + ' (' + (formData.get('pub_year') || 'N/A') + ')';
         // 1. Ambil semua checkbox SDG yang sedang dicentang
         let selectedSdgs = Array.from(document.querySelectorAll('input[name="sdgs[]"]:checked')).map(cb => {
@@ -754,6 +758,35 @@
             document.querySelectorAll('.inst-suggestions').forEach(box => box.classList.add('d-none'));
         }
     });
+
+    document.getElementById('inputDoi').addEventListener('input', function() {
+                        const doiValue = this.value.trim();
+                        const warningEl = document.getElementById('doiWarning');
+                        const successEl = document.getElementById('doiSuccess');
+                        const btnNext = document.getElementById('btnReview') || document.getElementById('btnSubmit'); 
+                        const doiRegex = /^https:\/\/doi\.org\/10\.\d{4,9}\/[-._;()\/:A-Z0-9]+$/i;
+
+                        if (doiValue === '') {
+                            // SEKARANG KOSONG = ERROR (KARENA WAJIB)
+                            warningEl.classList.remove('d-none');
+                            successEl.classList.add('d-none');
+                            this.classList.add('is-invalid');
+                            this.classList.remove('is-valid');
+                            if(btnNext) btnNext.disabled = true;
+                        } else if (doiRegex.test(doiValue)) {
+                            warningEl.classList.add('d-none');
+                            successEl.classList.remove('d-none');
+                            this.classList.remove('is-invalid');
+                            this.classList.add('is-valid');
+                            if(btnNext) btnNext.disabled = false;
+                        } else {
+                            warningEl.classList.remove('d-none');
+                            successEl.classList.add('d-none');
+                            this.classList.add('is-invalid');
+                            this.classList.remove('is-valid');
+                            if(btnNext) btnNext.disabled = true;
+                        }
+                    });
 </script>
 
 @include('partials.footer')
