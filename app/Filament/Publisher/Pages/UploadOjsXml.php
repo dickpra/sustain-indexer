@@ -68,6 +68,9 @@ class UploadOjsXml extends Page implements HasForms
     // =======================================================
     // 🔥 MESIN PEMBACA XML "SAPU JAGAT" (MULTI-FORMAT)
     // =======================================================
+    // =======================================================
+    // 🔥 MESIN PEMBACA XML "SAPU JAGAT" (MULTI-FORMAT)
+    // =======================================================
     public function submit()
     {
         $data = $this->form->getState();
@@ -79,17 +82,16 @@ class UploadOjsXml extends Page implements HasForms
         }
 
         try {
-            // 1. TRIK DEWA: Bersihkan Namespace (seperti <dc:title> jadi <title>) agar gampang dibaca!
+            // 1. TRIK DEWA: Bersihkan Namespace
             $xmlContent = file_get_contents($filePath);
             $xmlContent = preg_replace('/(<\/?)([\w\-]+:)/', '$1', $xmlContent); 
             
-            // Muat XML yang sudah bersih
             $xml = simplexml_load_string($xmlContent);
             $successCount = 0;
 
             DB::beginTransaction();
 
-            // 2. CARI WADAH ARTIKEL (Mendukung OJS Native, Crossref, OAI-PMH, PubMed, dll)
+            // 2. CARI WADAH ARTIKEL
             $articles = $xml->xpath('//article | //journal_article | //record | //item | //PubmedArticle | //Document');
 
             if (empty($articles)) {
@@ -100,11 +102,9 @@ class UploadOjsXml extends Page implements HasForms
             foreach ($articles as $article) {
                 // 3. AMBIL DATA DENGAN BANYAK KEMUNGKINAN TAG
                 
-                // Cari Judul (<title>, <article_title>, <ArticleTitle>)
+                // Cari Judul
                 $titleNode = $article->xpath('.//title | .//article_title | .//ArticleTitle');
                 $title = !empty($titleNode) ? (string) $titleNode[0] : 'Untitled Document';
-                
-                // Kalau judulnya benar-benar kosong, lewati data ini
                 if (trim($title) === '' || trim($title) === 'Untitled Document') continue;
 
                 // Cari Abstrak
@@ -114,12 +114,24 @@ class UploadOjsXml extends Page implements HasForms
                 // Cari DOI
                 $doiNode = $article->xpath('.//doi | .//identifier | .//id');
                 $doi = !empty($doiNode) ? trim((string) $doiNode[0]) : null;
-
-                // 🔥 STANDARISASI DOI: Jika isi DOI ada dan tidak diawali http, ubah jadi link resmi!
                 if ($doi && !str_starts_with($doi, 'http')) {
-                    // Hapus text "doi:" jika terbawa dari XML
                     $doi = str_ireplace('doi:', '', $doi);
                     $doi = 'https://doi.org/' . ltrim($doi, '/ ');
+                }
+
+                // 🔥 BARU: Cari Journal Title
+                $journalNode = $article->xpath('.//journalTitle | .//journal_title | .//JournalTitle');
+                $journalTitle = !empty($journalNode) ? (string) $journalNode[0] : 'Imported Journal';
+
+                // 🔥 BARU: Cari Publisher
+                $publisherNode = $article->xpath('.//publisher | .//Publisher');
+                $publisherName = !empty($publisherNode) ? (string) $publisherNode[0] : auth()->user()->name;
+
+                // 🔥 BARU: Cari Tahun Publikasi dari publicationDate (misal: 2025-04-30 -> ambil 2025)
+                $pubDateNode = $article->xpath('.//publicationDate | .//date | .//year');
+                $pubYear = date('Y'); // default tahun ini
+                if (!empty($pubDateNode)) {
+                    $pubYear = date('Y', strtotime((string) $pubDateNode[0]));
                 }
 
                 $initialCitations = rand(0, 5); 
@@ -128,11 +140,11 @@ class UploadOjsXml extends Page implements HasForms
                 $document = Document::create([
                     'document_number' => 'OJS-' . strtoupper(Str::random(10)),
                     'title' => $title,
-                    'journal_title' => 'Imported Journal', 
-                    'publisher' => auth()->user()->name, 
+                    'journal_title' => $journalTitle, // Menggunakan data XML
+                    'publisher' => $publisherName,    // Menggunakan data XML
                     'abstract' => $abstract,
                     'document_type' => 'Journal Article',
-                    'pub_year' => date('Y'),
+                    'pub_year' => $pubYear,           // Menggunakan data XML
                     'doi' => $doi,
                     'is_verified' => true,
                     'views' => 0,
@@ -145,7 +157,7 @@ class UploadOjsXml extends Page implements HasForms
                 DB::table('citation_histories')->insert([
                     'document_id' => $document->id,
                     'citation_count' => $initialCitations,
-                    'year' => date('Y'),
+                    'year' => $pubYear,
                     'month' => date('m'),
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -158,34 +170,44 @@ class UploadOjsXml extends Page implements HasForms
                 if (!empty($authorNodes)) {
                     foreach ($authorNodes as $xmlAuthor) {
                         
-                        // 🔥 TRIK OJS 3: Tangkap givenname dan familyname
-                        $firstName = (string) ($xmlAuthor->firstname ?? $xmlAuthor->givenname ?? $xmlAuthor->given_name ?? '');
-                        $lastName = (string) ($xmlAuthor->lastname ?? $xmlAuthor->familyname ?? $xmlAuthor->surname ?? '');
-                        
-                        $fullName = trim($firstName . ' ' . $lastName);
-                        
-                        if (empty($fullName)) {
-                            $fullName = trim(strip_tags($xmlAuthor->asXML()));
+                        // 🔥 REVISI: Tangkap nama dari tag <name> (Sesuai format XML DOAJ)
+                        $nameNode = $xmlAuthor->xpath('.//name');
+                        if (!empty($nameNode)) {
+                            $fullName = (string) $nameNode[0];
+                        } else {
+                            // Fallback jika pakai OJS Native biasa
+                            $firstName = (string) ($xmlAuthor->firstname ?? $xmlAuthor->givenname ?? $xmlAuthor->given_name ?? '');
+                            $lastName = (string) ($xmlAuthor->lastname ?? $xmlAuthor->familyname ?? $xmlAuthor->surname ?? '');
+                            $fullName = trim($firstName . ' ' . $lastName);
                         }
                         
-                        // 🔥 TAMBAHKAN BARIS INI: Hapus angka dan spasi sisa di akhir nama!
-                        // "Karen Joy P. Tandayag 1" akan otomatis jadi "Karen Joy P. Tandayag"
                         $fullName = preg_replace('/[\d\s]+$/', '', $fullName);
-
-                        // Abaikan kalau benar-benar kosong
                         if (empty($fullName) || $fullName === 'Unknown') continue;
 
-                        $authorEmail = (string) ($xmlAuthor->email ?? '');
-                        $affiliation = (string) ($xmlAuthor->affiliation ?? 'Independent Researcher');
+                        // 🔥 REVISI: Ambil Affiliation berdasarkan <affiliationId>
+                        $affiliation = 'Independent Researcher';
+                        $affilIdNode = $xmlAuthor->xpath('.//affiliationId');
+                        
+                        if (!empty($affilIdNode)) {
+                            $affilId = (string) $affilIdNode[0];
+                            // Cari nama kampus di dalam <affiliationsList> menggunakan XPath berdasarkan ID
+                            $affilNameNode = $article->xpath(".//affiliationsList/affiliationName[@affiliationId='{$affilId}']");
+                            if (!empty($affilNameNode)) {
+                                $affiliation = (string) $affilNameNode[0];
+                            }
+                        }
 
+                        // Simpan / Ambil Institusi
                         $institution = Institution::firstOrCreate(
                             ['name' => $affiliation]
                         );
 
-                        // Hasilkan email dummy elegan jika XML tidak punya email
+                        // Email Generator
+                        $authorEmail = (string) ($xmlAuthor->email ?? '');
                         $cleanNameForEmail = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $fullName));
                         $finalEmail = $authorEmail ?: $cleanNameForEmail . rand(100,999) . '@imported.com';
 
+                        // Simpan / Ambil Author
                         $author = Author::firstOrCreate(
                             ['email' => $finalEmail],
                             [

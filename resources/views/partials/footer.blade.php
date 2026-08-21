@@ -23,12 +23,6 @@
                             </a>
                         </li>
                         <li><hr class="dropdown-divider"></li>
-                        {{-- <li>
-                            <a class="dropdown-item py-2 fw-medium text-dark" href="/submit-xml" style="margin-left: 0; border: none;">
-                                <i class="bi bi-filetype-xml text-success me-2"></i>Upload OJS XML
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li> --}}
                         <li>
                             <a class="dropdown-item py-2" href="/submit-beta">
                                 <i class="bi bi-robot text-primary me-2"></i>
@@ -36,6 +30,12 @@
                                     <span class="fw-bold d-block">Upload PDF</span>
                                     <small class="text-muted" style="font-size: 11px;">Automatic extraction using Groq AI & Crossref</small>
                                 </div>
+                            </a>
+                        </li>
+                         <li><hr class="dropdown-divider"></li>
+                         <li>
+                            <a class="dropdown-item py-2 fw-medium text-dark" href="/publisher" style="margin-left: 0; border: none;">
+                                <i class="bi bi-filetype-xml text-success me-2"></i>Upload XML (Publisher)
                             </a>
                         </li>
                     </ul>

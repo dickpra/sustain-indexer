@@ -97,12 +97,12 @@
                         <i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>Upload PDF
                     </a>
                 </li>
-                {{-- <li><hr class="dropdown-divider"></li>
-                <li>
-                    <a class="dropdown-item py-2 fw-medium text-dark" href="/submit-xml" style="margin-left: 0; border: none;">
-                        <i class="bi bi-filetype-xml text-success me-2"></i>Upload OJS XML
-                    </a>
-                </li> --}}
+                <li><hr class="dropdown-divider"></li>
+                         <li>
+                            <a class="dropdown-item py-2 fw-medium text-dark" href="/publisher" style="margin-left: 0; border: none;">
+                                <i class="bi bi-filetype-xml text-success me-2"></i>Upload XML (Publisher)
+                            </a>
+                        </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                         <a class="dropdown-item py-2" href="/submit-beta">
@@ -144,11 +144,11 @@
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            {{-- <li>
-                                <a class="dropdown-item py-2 fw-medium text-dark" href="/submit-xml" style="margin-left: 0; border: none;">
-                                    <i class="bi bi-filetype-xml text-success me-2"></i>Upload OJS XML
-                                </a>
-                            </li> --}}
+                         <li>
+                            <a class="dropdown-item py-2 fw-medium text-dark" href="/publisher" style="margin-left: 0; border: none;">
+                                <i class="bi bi-filetype-xml text-success me-2"></i>Upload XML (Publisher)
+                            </a>
+                        </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item py-2" href="/submit-beta">
@@ -313,7 +313,7 @@
                             <div>
                                 <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.9rem;">{{ $inst->name }}</h6>
                                 <small class="text-muted d-block" style="font-size: 0.75rem;">
-                                    🌍 {{ $inst->country ?? 'Country Unknown' }}
+                                    📍 {{ $inst->country ?? 'Country Unknown' }}
                                 </small>
                             </div>
                             <span class="badge bg-light text-dark border rounded-pill" style="font-size: 0.7rem;">
@@ -355,12 +355,6 @@
                             </a>
                         </li>
                         <li><hr class="dropdown-divider"></li>
-                        {{-- <li>
-                            <a class="dropdown-item py-2 fw-medium text-dark" href="/submit-xml" style="margin-left: 0; border: none;">
-                                <i class="bi bi-filetype-xml text-success me-2"></i>Upload OJS XML
-                            </a>
-                        </li> --}}
-                        <li><hr class="dropdown-divider"></li>
                         <li>
                             <a class="dropdown-item py-2" href="/submit-beta">
                                 <i class="bi bi-robot text-primary me-2"></i>
@@ -370,6 +364,13 @@
                                 </div>
                             </a>
                         </li>
+                        <li><hr class="dropdown-divider"></li>
+                         <li>
+                            <a class="dropdown-item py-2 fw-medium text-dark" href="/publisher" style="margin-left: 0; border: none;">
+                                <i class="bi bi-filetype-xml text-success me-2"></i>Upload XML (Publisher)
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
                     </ul>
                 </div>
             </div>

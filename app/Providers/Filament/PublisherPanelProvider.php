@@ -7,6 +7,7 @@ use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages;
+use App\Filament\Publisher\Widgets\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -25,6 +26,7 @@ class PublisherPanelProvider extends PanelProvider
         return $panel
             ->id('publisher')
             ->path('publisher')
+            ->profile()
             ->colors([
                 'primary' => Color::Blue,
             ])
@@ -35,7 +37,7 @@ class PublisherPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Publisher/Resources'), for: 'App\\Filament\\Publisher\\Resources')
             ->discoverPages(in: app_path('Filament/Publisher/Pages'), for: 'App\\Filament\\Publisher\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Publisher/Widgets'), for: 'App\\Filament\\Publisher\\Widgets')
             ->widgets([

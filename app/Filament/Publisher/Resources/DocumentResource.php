@@ -3,7 +3,6 @@
 namespace App\Filament\Publisher\Resources;
 
 use App\Filament\Publisher\Resources\DocumentResource\Pages;
-use App\Filament\Publisher\Resources\DocumentResource\RelationManagers;
 use App\Models\Document;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -11,7 +10,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class DocumentResource extends Resource
 {
@@ -22,7 +20,7 @@ class DocumentResource extends Resource
     // =======================================================
     // 🔥 FITUR ISOLASI DATA (MULTI-TENANCY SEDERHANA)
     // =======================================================
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         // Publisher HANYA BISA melihat dokumen yang submitter_email-nya sama dengan email login mereka
         return parent::getEloquentQuery()->where('submitter_email', auth()->user()->email);
@@ -44,8 +42,6 @@ class DocumentResource extends Resource
 
                         // 🔥 Nama publisher dikunci pakai nama akun yang sedang login!
                         \Filament\Forms\Components\TextInput::make('publisher')
-                            // ->default(fn () => auth()->user()->name)
-                            // ->disabled()
                             ->dehydrated() // Memastikan data yang di-disable tetap tersimpan ke database
                             ->required(),
 
@@ -54,7 +50,68 @@ class DocumentResource extends Resource
                             ->columnSpanFull()
                             ->rows(5),
 
-                        \Filament\Forms\Components\TextInput::make('keywords'),
+                        // ==========================================
+                        // 🔥 TRIK SIHIR: GABUNGAN KEYWORD & SDGS
+                        // ==========================================
+                        \Filament\Forms\Components\CheckboxList::make('sdg_selections')
+                            ->label('Sustainable Development Goals (SDGs)')
+                            ->options([
+                                "SDG 1: No Poverty" => "SDG 1: No Poverty",
+                                "SDG 2: Zero Hunger" => "SDG 2: Zero Hunger",
+                                "SDG 3: Good Health and Well-being" => "SDG 3: Good Health",
+                                "SDG 4: Quality Education" => "SDG 4: Quality Education",
+                                "SDG 5: Gender Equality" => "SDG 5: Gender Equality",
+                                "SDG 6: Clean Water and Sanitation" => "SDG 6: Clean Water",
+                                "SDG 7: Affordable and Clean Energy" => "SDG 7: Clean Energy",
+                                "SDG 8: Decent Work and Economic Growth" => "SDG 8: Economic Growth",
+                                "SDG 9: Industry, Innovation and Infrastructure" => "SDG 9: Industry & Innovation",
+                                "SDG 10: Reduced Inequality" => "SDG 10: Reduced Inequality",
+                                "SDG 11: Sustainable Cities and Communities" => "SDG 11: Sustainable Cities",
+                                "SDG 12: Responsible Consumption and Production" => "SDG 12: Responsible Consumption",
+                                "SDG 13: Climate Action" => "SDG 13: Climate Action",
+                                "SDG 14: Life Below Water" => "SDG 14: Life Below Water",
+                                "SDG 15: Life on Land" => "SDG 15: Life on Land",
+                                "SDG 16: Peace and Justice Strong Institutions" => "SDG 16: Peace & Justice",
+                                "SDG 17: Partnerships to achieve the Goal" => "SDG 17: Partnerships"
+                            ])
+                            ->columns(3) 
+                            ->gridDirection('row')
+                            ->columnSpanFull()
+                            ->dehydrated(false)
+                            ->default([]) // 🔥 OBAT 1: Paksa jadi array kosong secara default
+                            ->afterStateHydrated(function (\Filament\Forms\Components\CheckboxList $component, $state, $record) {
+                                // Saat form EDIT dibuka, ekstrak SDG dari dalam string keywords
+                                if ($record && $record->keywords) {
+                                    $keywordsArray = array_map('trim', explode(',', $record->keywords));
+                                    $sdgs = array_filter($keywordsArray, fn($kw) => str_starts_with($kw, 'SDG'));
+                                    $component->state(array_values($sdgs));
+                                } else {
+                                    // 🔥 OBAT 2: Kalau bikin baru (Create), pastikan statusnya array kosong!
+                                    $component->state([]); 
+                                }
+                            }),
+
+                        \Filament\Forms\Components\TextInput::make('keywords')
+                            ->label('Keywords (Non-SDG)')
+                            ->helperText('Separate with commas (e.g., carbon, climate, sustainability)')
+                            ->columnSpanFull()
+                            ->afterStateHydrated(function (\Filament\Forms\Components\TextInput $component, $state, $record) {
+                                // Saat form EDIT dibuka, pisahkan keyword murni dari SDG
+                                if ($record && $record->keywords) {
+                                    $keywordsArray = array_map('trim', explode(',', $record->keywords));
+                                    $pureKeywords = array_filter($keywordsArray, fn($kw) => !str_starts_with($kw, 'SDG'));
+                                    $component->state(implode(', ', $pureKeywords));
+                                }
+                            })
+                            ->dehydrateStateUsing(function ($state, \Filament\Forms\Get $get) {
+                                // SAAT DISAVE: Gabungkan input text keywords + centangan SDGs
+                                $sdgs = $get('sdg_selections') ?? [];
+                                $pureKeywords = array_filter(array_map('trim', explode(',', $state)));
+                                $finalKeywords = array_merge($pureKeywords, $sdgs);
+                                
+                                return implode(', ', $finalKeywords);
+                            }),
+                        // ==========================================
 
                         \Filament\Forms\Components\Select::make('document_type')
                             ->options([
@@ -72,8 +129,6 @@ class DocumentResource extends Resource
                         \Filament\Forms\Components\TextInput::make('doi')
                             ->required()
                             ->url(),
-                            // ->prefix('https://doi.org/')
-                            // ->helperText('Contoh isi: 10.1234/abc.567 (Otomatis jadi link resmi)'),
 
                         \Filament\Forms\Components\TextInput::make('pages')
                             ->numeric(),
@@ -92,18 +147,14 @@ class DocumentResource extends Resource
                             ->label('Authors & Affiliations')
                             ->relationship('authors', 'name')
                             ->multiple()
-                            
-                            // 🚀 KEMBALIKAN 'email' KE SINI
-                            // Publisher bisa mencari pakai email, tapi di layar tetap akan tersensor!
                             ->searchable(['name', 'email']) 
-                            
                             ->preload()
                             ->allowHtml()
                             ->getOptionLabelFromRecordUsing(function (\App\Models\Author $record) {
                                 
                                 // 🔒 SENSOR EMAIL
                                 $emailParts = explode('@', $record->email);
-                                $username = $emailParts[0];
+                                $username = $emailParts[0] ?? 'unknown';
                                 $domain = $emailParts[1] ?? 'unknown.com';
                                 
                                 $maskedUsername = substr($username, 0, 2) . str_repeat('*', 3);
@@ -136,7 +187,6 @@ class DocumentResource extends Resource
                                 
                                 \Filament\Forms\Components\TextInput::make('country'),
                                 
-                                // Relasi ke institusi di dalam form pembuatan author
                                 \Filament\Forms\Components\Select::make('institution_id')
                                     ->label('Institution')
                                     ->relationship('institution', 'name')
@@ -151,9 +201,6 @@ class DocumentResource extends Resource
                                         \Filament\Forms\Components\TextInput::make('country'),
 
                                         // 🔥 MESIN PENCARI LOKASI (CUSTOM GEOCODER)
-                                        // ==========================================
-                                        // 🔥 MESIN PENCARI LOKASI (CUSTOM GEOCODER)
-                                        // ==========================================
                                         \Filament\Forms\Components\TextInput::make('search_location')
                                             ->label('Cari Lokasi Otomatis')
                                             ->placeholder('Ketik kampus / kota, klik ikon 👉')
@@ -161,7 +208,6 @@ class DocumentResource extends Resource
                                             ->suffixAction(
                                                 \Filament\Forms\Components\Actions\Action::make('search')
                                                     ->icon('heroicon-m-magnifying-glass')
-                                                    // 🔥 TAMBAHKAN $livewire DI SINI
                                                     ->action(function (\Filament\Forms\Set $set, $state, $livewire) {
                                                         if (blank($state)) return;
 
@@ -179,12 +225,10 @@ class DocumentResource extends Resource
                                                             $lat = (float) $results[0]['lat'];
                                                             $lng = (float) $results[0]['lon'];
 
-                                                            // 1. Update angka Latitude & Longitude
                                                             $set('location', ['lat' => $lat, 'lng' => $lng]);
                                                             $set('latitude', $lat);
                                                             $set('longitude', $lng);
                                                             
-                                                            // 2. 🔥 KATA SANDI SAKTI: Suruh peta Leaflet bergerak!
                                                             $livewire->dispatch('refreshMap');
                                                             
                                                             \Filament\Notifications\Notification::make()
@@ -206,22 +250,18 @@ class DocumentResource extends Resource
                                             ->dehydrated(false) 
                                             ->afterStateUpdated(function (\Filament\Forms\Set $set, ?array $state): void {
                                                 if ($state) {
-                                                    // Saat map digeser manual, angka di form juga ikut berubah
                                                     $set('latitude', $state['lat']);
                                                     $set('longitude', $state['lng']);
                                                 }
                                             })
                                             ->live(), 
                                             
-                                        // ==========================================
-                                        // 🔥 TAMPILKAN LAT & LNG UNTUK DIEDIT MANUAL
-                                        // ==========================================
                                         \Filament\Forms\Components\Grid::make(2)
                                             ->schema([
                                                 \Filament\Forms\Components\TextInput::make('latitude')
                                                     ->label('Latitude')
                                                     ->numeric()
-                                                    ->step('any') // Izinkan angka desimal panjang
+                                                    ->step('any') 
                                                     ->required(),
                                                     
                                                 \Filament\Forms\Components\TextInput::make('longitude')
@@ -230,9 +270,6 @@ class DocumentResource extends Resource
                                                     ->step('any')
                                                     ->required(),
                                             ]),
-                                            
-                                        \Filament\Forms\Components\Hidden::make('latitude'),
-                                        \Filament\Forms\Components\Hidden::make('longitude'),
                                     ]),
                             ])
                             ->columnSpanFull(),
@@ -241,7 +278,6 @@ class DocumentResource extends Resource
                 // ==========================================
                 // 🔥 3. HIDDEN FIELDS (Kunci Keamanan)
                 // ==========================================
-                // Kita sembunyikan data submitter agar terisi otomatis dan Publisher tidak kehilangan hak akses dokumennya
                 \Filament\Forms\Components\Hidden::make('submitter_email')
                     ->default(fn () => auth()->user()->email),
                 \Filament\Forms\Components\Hidden::make('submitter_first_name')
@@ -249,7 +285,7 @@ class DocumentResource extends Resource
                 \Filament\Forms\Components\Hidden::make('submitter_last_name')
                     ->default('(Publisher)'),
                 \Filament\Forms\Components\Hidden::make('is_verified')
-                    ->default(true), // Dokumen dari publisher langsung diverifikasi
+                    ->default(true), 
             ]);
     }
 
@@ -257,52 +293,16 @@ class DocumentResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('document_number')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('title')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('journal_title')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('publisher')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('keywords')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('document_type')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('pub_year')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('pages')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('reference_count')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\IconColumn::make('is_peer_reviewed')
-                    ->boolean(),
-                Tables\Columns\TextColumn::make('submitter_first_name')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('submitter_last_name')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('submitter_email')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('doi')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('citation_count')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\IconColumn::make('is_verified')
-                    ->boolean(),
-                Tables\Columns\TextColumn::make('views')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('document_number')->searchable(),
+                Tables\Columns\TextColumn::make('title')->searchable()->limit(30),
+                Tables\Columns\TextColumn::make('journal_title')->searchable(),
+                Tables\Columns\TextColumn::make('publisher')->searchable(),
+                Tables\Columns\TextColumn::make('document_type')->searchable(),
+                Tables\Columns\TextColumn::make('pub_year')->searchable(),
+                Tables\Columns\TextColumn::make('citation_count')->numeric()->sortable(),
+                Tables\Columns\IconColumn::make('is_verified')->boolean(),
+                Tables\Columns\TextColumn::make('views')->numeric()->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //
@@ -319,9 +319,7 @@ class DocumentResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
