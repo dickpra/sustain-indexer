@@ -44,6 +44,8 @@ class HomeController extends Controller
         $mostCited = Document::where('is_verified', true)->orderBy('citation_count', 'desc')->take(3)->get();
         $mostPopular = Document::where('is_verified', true)->orderBy('views', 'desc')->take(3)->get();
 
-        return view('index', compact('docTypes', 'topPublishers', 'yearStats', 'mostCited', 'mostPopular'));
+        $totalVisitors = \App\Models\Document::sum('views');
+
+        return view('index', compact('docTypes', 'topPublishers', 'yearStats', 'mostCited', 'mostPopular', 'totalVisitors'));
     }
 }

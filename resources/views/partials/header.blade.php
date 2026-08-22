@@ -1,6 +1,26 @@
+
+<style>
+    .header-logo {
+    width: 250px;
+    height: auto;
+    display: block;
+    }
+
+    @media (max-width: 767px) {
+        .header-logo {
+            margin: 0 auto;
+        }
+    }
+    </style> 
 <header class="academic-header shadow-sm">
     <div class="container d-flex justify-content-between align-items-center">
-        <h1 class="academic-title"><a href="/">📚 SustaIndex</a></h1>
+        <h1 class="academic-title">
+            <a href="/">
+                <img src="{{ asset('logo/1_Main_Sustaindex_landscape.png') }}" 
+                    alt="SustaIndex"
+                    class="header-logo">
+            </a>
+        </h1>
         
         <div class="academic-nav dropdown">
             <a href="#" class="dropdown-toggle text-decoration-none d-flex align-items-center" data-bs-toggle="dropdown" aria-expanded="false" style="padding-bottom: 5px;">

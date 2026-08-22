@@ -6,7 +6,7 @@
     <title>SustaIndex - Academic Index</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    
+    <link rel="icon" type="image/png" href="{{ asset('logo/1_Main_Sustaindex_potrait.png') }}">
     <style>
         /* Base Styling */
         body { background-color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
@@ -17,8 +17,40 @@
         
         /* Area Pencarian Utama */
         .search-section { padding: 100px 0 40px 0; text-align: center; }
-        .brand-logo { font-size: 4.5rem; font-weight: 800; color: #0d6efd; letter-spacing: -1.5px; margin-bottom: 30px; }
-        .brand-logo span { color: #333; }
+        
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 50px; 
+        }
+
+        .brand-icon {
+            width: 150px; 
+            height: 150px; 
+            flex-shrink: 0;
+        }
+
+        .brand-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; 
+        }
+
+        .brand-text {
+            font-size: 60px; 
+            font-weight: 600;
+            line-height: 1;
+            color: #0066ff;
+            letter-spacing: -3px; 
+        }
+
+        .brand-text span {
+            color: #198754;
+            font-weight: 400;
+        }
+
         .search-box { width: 100%; max-width: 650px; margin: 0 auto; position: relative; }
         .search-input { border-radius: 30px; padding: 15px 25px; font-size: 1.1rem; box-shadow: 0 1px 6px rgba(32,33,36,.28); border: 1px solid #dfe1e5; transition: 0.2s; }
         .search-input:hover, .search-input:focus { box-shadow: 0 1px 8px rgba(32,33,36,.4); outline: none; border-color: rgba(223,225,229,0); }
@@ -35,52 +67,23 @@
             .nav-top { position: static; text-align: center; padding-top: 20px; margin-bottom: 10px; }
             .nav-top a { display: inline-block; padding: 8px 20px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 20px; }
             .search-section { padding: 20px 0; }
-            .brand-logo { font-size: 3rem; margin-bottom: 20px; }
-            .search-box { padding: 0 20px; }
+            
+            /* 🔥 FIX: Logo & Teks dikecilkan dan ditumpuk (Stack) di HP */
+            .brand-logo { flex-direction: column; gap: 10px; margin-bottom: 25px; }
+            .brand-icon { width: 90px; height: 90px; }
+            .brand-text { font-size: 38px; letter-spacing: -1.5px; }
+
+            .search-box { padding: 0 15px; }
             .search-input { font-size: 1rem; padding: 12px 20px; }
-            /* Tombol turun ke bawah (stack) di HP */
-            .btn-action { display: block; width: calc(100% - 40px); margin: 10px auto; }
-            /* Jarak Papan Klasemen di HP */
+            .btn-action { display: block; width: calc(100% - 30px); margin: 10px auto; }
+            
             .stats-container { margin-top: 30px !important; }
             .stats-col { margin-bottom: 30px; }
-            .academic-footer .text-md-end { text-align: left !important; margin-top: 20px; }
-        }
-
-        .brand-logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 20px; /* Tingkatkan gap sedikit untuk proporsi */
-            margin-bottom: 50px; /* Tingkatkan margin sedikit */
-        }
-
-        .brand-icon {
-            width: 150px; /* Diperbesar dari 120px */
-            height: 150px; /* Diperbesar dari 120px */
-            flex-shrink: 0;
-        }
-
-        .brand-icon img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain; /* Pertahankan agar logo muat dan proporsional */
-            /* Hapus yang lama: position: absolute, height: 160px, left: -5px, top: -45px */
-        }
-
-        .brand-text {
-            font-size: 60px; /* Tingkatkan font size secara drastis (untuk 'SustaIndexSearch') */
-            font-weight: 600;
-            line-height: 1;
-            color: #0066ff;
-            letter-spacing: -3px; /* Sesuaikan letter-spacing untuk font yang lebih besar */
-        }
-
-        .brand-text span {
-            color: #198754;
-            font-weight: 400;
+            
+            /* Jarak Card Counter di Mobile */
+            .col-6.col-md-3 { margin-bottom: 20px; }
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
 
@@ -98,18 +101,18 @@
                     </a>
                 </li>
                 <li><hr class="dropdown-divider"></li>
-                         <li>
-                            <a class="dropdown-item py-2 fw-medium text-dark" href="/publisher" style="margin-left: 0; border: none;">
-                                <i class="bi bi-filetype-xml text-success me-2"></i>Upload XML (Publisher)
-                            </a>
-                        </li>
+                <li>
+                    <a class="dropdown-item py-2 fw-medium text-dark" href="/publisher" style="margin-left: 0; border: none;">
+                        <i class="bi bi-filetype-xml text-success me-2"></i>Upload XML (Publisher)
+                    </a>
+                </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                        <a class="dropdown-item py-2" href="/submit-beta">
-                            <i class="bi bi-robot text-primary me-2"></i>
-                            <div>
-                                <span class="fw-bold d-block">Upload PDF</span>
-                                <small class="text-muted" style="font-size: 11px;">Automatic extraction using Groq AI & Crossref</small>
+                    <a class="dropdown-item py-2" href="/submit-beta">
+                        <i class="bi bi-robot text-primary me-2"></i>
+                        <div>
+                            <span class="fw-bold d-block">Upload PDF</span>
+                            <small class="text-muted" style="font-size: 11px;">Automatic extraction using Groq AI & Crossref</small>
                         </div>
                     </a>
                 </li>
@@ -119,7 +122,7 @@
     <div class="container search-section">
         <div class="brand-logo">
             <div class="brand-icon">
-                <img src="{{ asset('logo/1_Main_Sustaindex_potrait.png') }}" alt="">
+                <img src="{{ asset('logo/1_Main_Sustaindex_potrait.png') }}" alt="SustaIndex Icon">
             </div>
 
             <div class="brand-text">
@@ -144,11 +147,11 @@
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                         <li>
-                            <a class="dropdown-item py-2 fw-medium text-dark" href="/publisher" style="margin-left: 0; border: none;">
-                                <i class="bi bi-filetype-xml text-success me-2"></i>Upload XML (Publisher)
-                            </a>
-                        </li>
+                            <li>
+                                <a class="dropdown-item py-2 fw-medium text-dark" href="/publisher" style="margin-left: 0; border: none;">
+                                    <i class="bi bi-filetype-xml text-success me-2"></i>Upload XML (Publisher)
+                                </a>
+                            </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item py-2" href="/submit-beta">
@@ -169,82 +172,62 @@
             <p>A Peer-Reviewed Academic Indexing System</p>
         </div>
     </div>
-    <div class="container my-4" style="max-width: 900px;">
+
+    <!-- Statistik Counter -->
+    <div class="container my-4" style="max-width: 1050px;">
         <div class="card border-0 shadow-sm rounded-4 p-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border: 1px solid #eaeaea !important;">
-            <div class="row text-center align-items-center g-3">
+            
+            <!-- 🔥 FIX: Pakai row-cols-md-5 agar 5 item berjejer rapi di PC! -->
+            <div class="row row-cols-2 row-cols-md-5 text-center align-items-center g-3 justify-content-center">
                 
-                <div class="col-6 col-md-3">
+                <div class="col">
                     <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
                         <i class="bi bi-file-earmark-text-fill fs-4" style="color: #003366;"></i>
-                        <span class="h3 fw-bold mb-0 counter" data-target="{{ $totalDocuments }}" style="color: #003366; font-family: 'Georgia', serif;">0</span>
+                        <span class="h3 fw-bold mb-0 counter" data-target="{{ $totalDocuments ?? 0 }}" style="color: #003366; font-family: 'Georgia', serif;">0</span>
                     </div>
                     <span class="text-uppercase text-muted fw-semibold" style="letter-spacing: 0.5px; font-size: 0.72rem;">Indexed Articles</span>
                 </div>
                 
-                <div class="col-6 col-md-3 border-start-md">
+                <div class="col border-start-md">
                     <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
                         <i class="bi bi-people-fill fs-4" style="color: #003366;"></i>
-                        <span class="h3 fw-bold mb-0 counter" data-target="{{ $totalAuthors }}" style="color: #003366; font-family: 'Georgia', serif;">0</span>
+                        <span class="h3 fw-bold mb-0 counter" data-target="{{ $totalAuthors ?? 0 }}" style="color: #003366; font-family: 'Georgia', serif;">0</span>
                     </div>
                     <span class="text-uppercase text-muted fw-semibold" style="letter-spacing: 0.5px; font-size: 0.72rem;">Researchers</span>
                 </div>
                 
-                <div class="col-6 col-md-3 border-start-md">
+                <div class="col border-start-md">
                     <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
                         <i class="bi bi-bank2 fs-4" style="color: #003366;"></i>
-                        <span class="h3 fw-bold mb-0 counter" data-target="{{ $totalInstitutions }}" style="color: #003366; font-family: 'Georgia', serif;">0</span>
+                        <span class="h3 fw-bold mb-0 counter" data-target="{{ $totalInstitutions ?? 0 }}" style="color: #003366; font-family: 'Georgia', serif;">0</span>
                     </div>
                     <span class="text-uppercase text-muted fw-semibold" style="letter-spacing: 0.5px; font-size: 0.72rem;">Institutions</span>
                 </div>
                 
-                <div class="col-6 col-md-3 border-start-md">
+                <div class="col border-start-md">
                     <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
                         <i class="bi bi-globe-americas fs-4" style="color: #003366;"></i>
-                        <span class="h3 fw-bold mb-0 counter" data-target="{{ $totalCountries }}" style="color: #003366; font-family: 'Georgia', serif;">0</span>
+                        <span class="h3 fw-bold mb-0 counter" data-target="{{ $totalCountries ?? 0 }}" style="color: #003366; font-family: 'Georgia', serif;">0</span>
                     </div>
                     <span class="text-uppercase text-muted fw-semibold" style="letter-spacing: 0.5px; font-size: 0.72rem;">Countries</span>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- 🔥 TAMBAHAN VISITOR (TOTAL VIEWS)          -->
+                <!-- ========================================== -->
+                <div class="col border-start-md mt-4 mt-md-0">
+                    <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                        <i class="bi bi-eye-fill fs-4" style="color: #003366;"></i>
+                        <span class="h3 fw-bold mb-0 counter" data-target="{{ $totalVisitors ?? 0 }}" style="color: #003366; font-family: 'Georgia', serif;">0</span>
+                    </div>
+                    <span class="text-uppercase text-muted fw-semibold" style="letter-spacing: 0.5px; font-size: 0.72rem;">Global Visitors</span>
                 </div>
 
             </div>
         </div>
     </div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const counters = document.querySelectorAll('.counter');
-            const speed = 150; 
-
-            const animateCounters = () => {
-                counters.forEach(counter => {
-                    const updateCount = () => {
-                        const target = +counter.getAttribute('data-target');
-                        const count = +counter.innerText.replace(/,/g, ''); 
-                        const inc = target / speed;
-
-                        if (count < target) {
-                            counter.innerText = Math.ceil(count + inc).toLocaleString('en-US');
-                            setTimeout(updateCount, 15);
-                        } else {
-                            counter.innerText = target.toLocaleString('en-US');
-                        }
-                    };
-                    updateCount();
-                });
-            };
-
-            const observer = new IntersectionObserver((entries, observer) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        animateCounters();
-                        observer.disconnect(); 
-                    }
-                });
-            }, { threshold: 0.2 }); 
-
-            const card = document.querySelector('.counter')?.closest('.card');
-            if (card) observer.observe(card);
-        });
-    </script>
+    <!-- Leaderboards -->
     <div class="container stats-container" style="margin-top: 50px; margin-bottom: 50px;">
         <div class="text-center mb-4">
             <h3 class="fw-bold text-dark" style="font-family: 'Georgia', serif;">🏆 SustaIndex Leaderboards</h3>
@@ -252,7 +235,6 @@
         </div>
 
         <div class="row g-4">
-            
             <div class="col-lg-4 col-md-6">
                 <div class="d-flex align-items-center mb-3">
                     <i class="bi bi-trophy-fill text-warning fs-5 me-2"></i>
@@ -263,9 +245,9 @@
                     <a href="/document/{{ $doc->document_number }}" class="list-group-item list-group-item-action p-3">
                         <h6 class="mb-1 fw-bold text-primary" style="font-size: 0.9rem; line-height: 1.3;">{{ $doc->title }}</h6>
                         <div class="d-flex justify-content-between align-items-center mt-2">
-                            <small class="text-muted" style="font-size: 0.75rem;">{{ $doc->journal_title ?: 'Journal' }}</small>
+                            <small class="text-muted text-truncate w-75" style="font-size: 0.75rem;">{{ $doc->journal_title ?: 'Journal' }}</small>
                             <span class="badge bg-primary rounded-pill" style="font-size: 0.7rem;">
-                                <i class="bi bi-chat-quote-fill me-1"></i>{{ number_format($doc->citation_count) }} Citations
+                                <i class="bi bi-chat-quote-fill me-1"></i>{{ number_format($doc->citation_count) }}
                             </span>
                         </div>
                     </a>
@@ -284,14 +266,14 @@
                     @forelse($topResearchers as $author)
                     <a href="/author/{{ $author->id }}" class="list-group-item list-group-item-action p-3">
                         <div class="d-flex align-items-center justify-content-between">
-                            <div>
-                                <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.9rem;">{{ $author->name }}</h6>
-                                <small class="text-muted d-block" style="font-size: 0.75rem;">
+                            <div class="w-75">
+                                <h6 class="mb-0 fw-bold text-dark text-truncate" style="font-size: 0.9rem;">{{ $author->name }}</h6>
+                                <small class="text-muted d-block text-truncate" style="font-size: 0.75rem;">
                                     🏛️ {{ $author->institution->name ?? 'Independent Researcher' }}
                                 </small>
                             </div>
                             <span class="badge bg-light text-dark border rounded-pill" style="font-size: 0.7rem;">
-                                📄 {{ $author->documents_count }} Papers
+                                📄 {{ $author->documents_count }}
                             </span>
                         </div>
                     </a>
@@ -310,14 +292,14 @@
                     @forelse($topInstitutions as $inst)
                     <a href="/institution/{{ $inst->id }}" class="list-group-item list-group-item-action p-3">
                         <div class="d-flex align-items-center justify-content-between">
-                            <div>
-                                <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.9rem;">{{ $inst->name }}</h6>
-                                <small class="text-muted d-block" style="font-size: 0.75rem;">
+                            <div class="w-75">
+                                <h6 class="mb-0 fw-bold text-dark text-truncate" style="font-size: 0.9rem;">{{ $inst->name }}</h6>
+                                <small class="text-muted d-block text-truncate" style="font-size: 0.75rem;">
                                     📍 {{ $inst->country ?? 'Country Unknown' }}
                                 </small>
                             </div>
                             <span class="badge bg-light text-dark border rounded-pill" style="font-size: 0.7rem;">
-                                👥 {{ $inst->authors_count }} Researchers
+                                👥 {{ $inst->authors_count }}
                             </span>
                         </div>
                     </a>
@@ -326,61 +308,48 @@
                     @endforelse
                 </div>
             </div>
-
         </div>
     </div>
 
-</div> <footer class="academic-footer">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="footer-logo mb-2">📚 SustaIndex</div>
-                <p class="small text-muted pe-md-5">A Peer-Reviewed Sustainable Academic Indexing System. Dedicated to organizing, preserving, and providing access to quality global research materials.</p>
-            </div>
-            
-            <div class="col-md-6 text-md-end">
-                <div class="mb-2">
-                    <a href="#" class="small me-3">Selection Policy</a>
-                    <a href="#" class="small me-3">Privacy Policy</a>
-                    <a href="#" class="small">Contact Us</a>
-                </div>
-                <div class="mt-3 dropdown d-inline-block">
-                    <button class="btn btn-sm btn-outline-secondary rounded-0 fw-bold dropdown-toggle" type="button" id="footerSubmitDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        Index Your Work
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-3" aria-labelledby="footerSubmitDropdown" style="border-top: 3px solid #003366 !important; min-width: 200px;">
-                        <li>
-                            <a class="dropdown-item py-2 fw-medium text-dark" href="/submit" style="margin-left: 0; border: none;">
-                                <i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>Upload PDF
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item py-2" href="/submit-beta">
-                                <i class="bi bi-robot text-primary me-2"></i>
-                                <div>
-                                    <span class="fw-bold d-block">Upload PDF</span>
-                                    <small class="text-muted" style="font-size: 11px;">Automatic extraction using Groq AI & Crossref</small>
-                                </div>
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                         <li>
-                            <a class="dropdown-item py-2 fw-medium text-dark" href="/publisher" style="margin-left: 0; border: none;">
-                                <i class="bi bi-filetype-xml text-success me-2"></i>Upload XML (Publisher)
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        
-        <div class="text-center mt-4 pt-3 border-top small text-muted">
-            &copy; {{ date('Y') }} SustaIndex System. All rights reserved.
-        </div>
-    </div>
-</footer>
+</div> <!-- 🔥 FIX UTAMA: TUTUP DIV MAIN-WRAPPER DI SINI! SEBELUM FOOTER -->
 
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const counters = document.querySelectorAll('.counter');
+        const speed = 150; 
+
+        const animateCounters = () => {
+            counters.forEach(counter => {
+                const updateCount = () => {
+                    const target = +counter.getAttribute('data-target');
+                    const count = +counter.innerText.replace(/,/g, ''); 
+                    const inc = target / speed;
+
+                    if (count < target) {
+                        counter.innerText = Math.ceil(count + inc).toLocaleString('en-US');
+                        setTimeout(updateCount, 15);
+                    } else {
+                        counter.innerText = target.toLocaleString('en-US');
+                    }
+                };
+                updateCount();
+            });
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateCounters();
+                    observer.disconnect(); 
+                }
+            });
+        }, { threshold: 0.2 }); 
+
+        const card = document.querySelector('.counter')?.closest('.card');
+        if (card) observer.observe(card);
+    });
+</script>
+
+@include('partials.footer')
 </body>
 </html>

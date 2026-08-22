@@ -37,12 +37,13 @@ Route::get('/', function () {
     // 4. Global Stats
     $totalDocuments = \App\Models\Document::count();
     $totalAuthors = \App\Models\Author::count();
+    $totalVisitors = \App\Models\Document::where('is_verified', true)->sum('views');
     $totalInstitutions = \App\Models\Institution::count();
     $totalCountries = \App\Models\Institution::whereNotNull('country')->distinct('country')->count();
 
     return view('home', compact(
         'mostCited', 'mostPopular', 'topResearchers', 'topInstitutions',
-        'totalDocuments', 'totalAuthors', 'totalInstitutions', 'totalCountries'
+        'totalDocuments', 'totalAuthors', 'totalInstitutions', 'totalCountries', 'totalVisitors'
     )); 
 });
 
