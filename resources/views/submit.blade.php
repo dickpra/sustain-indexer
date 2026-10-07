@@ -31,6 +31,24 @@
         .author-badge { position: absolute; top: -12px; left: 15px; background: #cc0000; color: white; padding: 2px 15px; font-size: 0.85em; font-weight: bold; }
         .coauthor-badge { background: #003366 !important; color: #fff !important; }
         .remove-author { position: absolute; top: 10px; right: 15px; }
+
+        .header-logo {
+        width: 250px;
+        height: auto;
+        display: block;
+        }
+
+        @media (max-width: 767px) {
+            .header-logo {
+                margin: 0 auto;
+            }
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
         
         /* Map Container */
         #map { height: 300px; width: 100%; border: 1px solid #ccc; margin-top: 10px; }
@@ -41,7 +59,11 @@
 
 <div class="academic-header">
     <div class="container d-flex justify-content-between align-items-center">
-        <h1 class="academic-title"><a href="/">📚 SustaIndex</a></h1>
+        <a href="/">
+                <img src="{{ asset('logo/1_Main_Sustaindex_landscape.png') }}" 
+                    alt="SustaIndex"
+                    class="header-logo">
+            </a>
         <a href="/" class="btn btn-sm btn-outline-light rounded-0">Cancel</a>
     </div>
 </div>
@@ -87,72 +109,9 @@
                         <label class="form-label">Keywords</label>
                         <input type="text" name="keywords" class="form-control" placeholder="e.g., global warming, carbon footprint, sustainability">
                         <small class="text-muted">Separate multiple keywords with commas.</small>
+
+                        <div id="sdgBadgeContainer" class="mt-2 d-flex flex-wrap gap-2"></div>
                     </div>
-                    <div class="mb-4">
-                    <label class="form-label">Sustainable Development Goals (SDGs) <span class="text-danger">*</span></label>
-                    <p class="text-muted small mb-2">
-                        <i class="bi bi-hand-index-thumb"></i> Click one or more SDGs that are relevant to this document.
-                    </p>
-                    
-                    <style>
-                        .sdg-badges .btn { border-radius: 50rem; padding: 6px 15px; margin: 0 5px 8px 0; font-size: 0.85rem; border: 1px solid #ccc; color: #555; background-color: white; transition: all 0.2s; }
-                        .sdg-badges .btn:hover { border-color: #003366; color: #003366; background-color: #f4f8fc; }
-                        .sdg-badges .btn-check:checked + .btn { background-color: #003366; color: white; border-color: #003366; box-shadow: 0 2px 5px rgba(0,51,102,0.3); font-weight: bold; }
-                    </style>
-
-                    <div class="sdg-badges">
-                        <input type="checkbox" class="btn-check" id="sdg1" name="sdgs[]" value="SDG 1: No Poverty">
-                        <label class="btn" for="sdg1">1: No Poverty</label>
-
-                        <input type="checkbox" class="btn-check" id="sdg2" name="sdgs[]" value="SDG 2: Zero Hunger">
-                        <label class="btn" for="sdg2">2: Zero Hunger</label>
-
-                        <input type="checkbox" class="btn-check" id="sdg3" name="sdgs[]" value="SDG 3: Good Health and Well-being">
-                        <label class="btn" for="sdg3">3: Good Health</label>
-
-                        <input type="checkbox" class="btn-check" id="sdg4" name="sdgs[]" value="SDG 4: Quality Education">
-                        <label class="btn" for="sdg4">4: Quality Education</label>
-
-                        <input type="checkbox" class="btn-check" id="sdg5" name="sdgs[]" value="SDG 5: Gender Equality">
-                        <label class="btn" for="sdg5">5: Gender Equality</label>
-
-                        <input type="checkbox" class="btn-check" id="sdg6" name="sdgs[]" value="SDG 6: Clean Water and Sanitation">
-                        <label class="btn" for="sdg6">6: Clean Water</label>
-
-                        <input type="checkbox" class="btn-check" id="sdg7" name="sdgs[]" value="SDG 7: Affordable and Clean Energy">
-                        <label class="btn" for="sdg7">7: Clean Energy</label>
-
-                        <input type="checkbox" class="btn-check" id="sdg8" name="sdgs[]" value="SDG 8: Decent Work and Economic Growth">
-                        <label class="btn" for="sdg8">8: Economic Growth</label>
-
-                        <input type="checkbox" class="btn-check" id="sdg9" name="sdgs[]" value="SDG 9: Industry, Innovation and Infrastructure">
-                        <label class="btn" for="sdg9">9: Industry & Innovation</label>
-
-                        <input type="checkbox" class="btn-check" id="sdg10" name="sdgs[]" value="SDG 10: Reduced Inequality">
-                        <label class="btn" for="sdg10">10: Reduced Inequality</label>
-
-                        <input type="checkbox" class="btn-check" id="sdg11" name="sdgs[]" value="SDG 11: Sustainable Cities and Communities">
-                        <label class="btn" for="sdg11">11: Sustainable Cities</label>
-
-                        <input type="checkbox" class="btn-check" id="sdg12" name="sdgs[]" value="SDG 12: Responsible Consumption and Production">
-                        <label class="btn" for="sdg12">12: Responsible Consumption</label>
-
-                        <input type="checkbox" class="btn-check" id="sdg13" name="sdgs[]" value="SDG 13: Climate Action">
-                        <label class="btn" for="sdg13">13: Climate Action</label>
-
-                        <input type="checkbox" class="btn-check" id="sdg14" name="sdgs[]" value="SDG 14: Life Below Water">
-                        <label class="btn" for="sdg14">14: Life Below Water</label>
-
-                        <input type="checkbox" class="btn-check" id="sdg15" name="sdgs[]" value="SDG 15: Life on Land">
-                        <label class="btn" for="sdg15">15: Life on Land</label>
-
-                        <input type="checkbox" class="btn-check" id="sdg16" name="sdgs[]" value="SDG 16: Peace and Justice Strong Institutions">
-                        <label class="btn" for="sdg16">16: Peace & Justice</label>
-
-                        <input type="checkbox" class="btn-check" id="sdg17" name="sdgs[]" value="SDG 17: Partnerships to achieve the Goal">
-                        <label class="btn" for="sdg17">17: Partnerships</label>
-                    </div>
-                </div>
 
                     <div class="row mb-4">
                         <div class="col-md-6 mb-3">
@@ -273,7 +232,7 @@
                                 <tr><th style="width: 25%; color:#003366;">Document Title</th><td id="rev_title" class="fw-bold"></td></tr>
                                 <tr><th style="color:#003366;">Abstract</th><td id="rev_abstract" style="text-align: justify; font-size: 0.9em;"></td></tr>
                                 
-                                <tr><th style="color:#003366;">SDGs</th><td id="rev_sdgs"></td></tr>
+                                {{-- <tr><th style="color:#003366;">SDGs</th><td id="rev_sdgs"></td></tr> --}}
                                 <tr><th style="color:#003366;">DOI (Digital Object Identifier)</th><td id="rev_doi" class="fw-bold text-primary font-monospace"></td></tr>
                                 
                                 <tr><th style="color:#003366;">Keywords</th><td id="rev_keywords"></td></tr>
@@ -467,15 +426,15 @@
         document.getElementById('rev_doi').innerText = formData.get('doi');
         document.getElementById('rev_type_year').innerText = formData.get('document_type') + ' (' + (formData.get('pub_year') || 'N/A') + ')';
         // 1. Ambil semua checkbox SDG yang sedang dicentang
-        let selectedSdgs = Array.from(document.querySelectorAll('input[name="sdgs[]"]:checked')).map(cb => {
-            // Bungkus dengan span badge biar rapi di tabel
-            return `<span class="badge" style="background-color: #003366; margin-right: 4px; margin-bottom: 4px;">${cb.value}</span>`;
+        // 1. Ambil semua SDG dari Hidden Input yang diciptakan AI
+        let selectedSdgs = Array.from(document.querySelectorAll('input[name="sdgs[]"]')).map(input => {
+            return `<span class="badge" style="background-color: #003366; margin-right: 4px; margin-bottom: 4px;">${input.value}</span>`;
         });
 
-        // 2. Masukkan ke dalam tabel review (atau tampilkan pesan jika kosong)
-        document.getElementById('rev_sdgs').innerHTML = selectedSdgs.length > 0 
-            ? selectedSdgs.join(' ') 
-            : '<em class="text-muted">No SDGs selected</em>';
+        // // 2. Masukkan ke dalam tabel review (atau tampilkan pesan jika kosong)
+        // document.getElementById('rev_sdgs').innerHTML = selectedSdgs.length > 0 
+        //     ? selectedSdgs.join(' ') 
+        //     : '<em class="text-muted">No SDGs selected</em>';
         const pgs = formData.get('pages') ? formData.get('pages') + ' pages' : 'N/A';
         const refs = formData.get('reference_count') ? formData.get('reference_count') + ' refs' : 'N/A';
         document.getElementById('rev_pages_refs').innerText = pgs + ' | ' + refs;
@@ -787,6 +746,124 @@
                             if(btnNext) btnNext.disabled = true;
                         }
                     });
+    // ==========================================
+    // 🤖 BETA AI V6: NINJA HIDDEN INPUTS (DATABASE READY)
+    // ==========================================
+    
+    const sdgFullNames = {
+        'sdg1': 'SDG 1: No Poverty', 'sdg2': 'SDG 2: Zero Hunger', 'sdg3': 'SDG 3: Good Health and Well-being',
+        'sdg4': 'SDG 4: Quality Education', 'sdg5': 'SDG 5: Gender Equality', 'sdg6': 'SDG 6: Clean Water and Sanitation',
+        'sdg7': 'SDG 7: Affordable and Clean Energy', 'sdg8': 'SDG 8: Decent Work and Economic Growth',
+        'sdg9': 'SDG 9: Industry Innovation and Infrastructure', 
+        'sdg10': 'SDG 10: Reduced Inequality', 'sdg11': 'SDG 11: Sustainable Cities and Communities', 
+        'sdg12': 'SDG 12: Responsible Consumption and Production', 'sdg13': 'SDG 13: Climate Action', 
+        'sdg14': 'SDG 14: Life Below Water', 'sdg15': 'SDG 15: Life on Land',
+        'sdg16': 'SDG 16: Peace and Justice Strong Institutions', 'sdg17': 'SDG 17: Partnerships to achieve the Goal'
+    };
+
+    let aiDebounceTimer;
+    const abstractInput = document.querySelector('textarea[name="abstract"]');
+
+    // Buat "Wadah Rahasia" untuk menyimpan data SDG yang akan dikirim ke Backend
+    let hiddenSdgContainer = document.getElementById('hiddenSdgInputs');
+    if (!hiddenSdgContainer) {
+        hiddenSdgContainer = document.createElement('div');
+        hiddenSdgContainer.id = 'hiddenSdgInputs';
+        document.getElementById('submitForm').appendChild(hiddenSdgContainer);
+    }
+
+    async function scanAbstractForSDG(showToast = true) {
+        if (!abstractInput) return;
+        const text = abstractInput.value;
+        const badgeContainer = document.getElementById('sdgBadgeContainer');
+
+        // JIKA ABSTRAK KOSONG: Bersihkan semua jejak Badge dan Hidden Input
+        if (text.length < 30) {
+            if (badgeContainer) badgeContainer.innerHTML = ''; 
+            hiddenSdgContainer.innerHTML = ''; 
+            return; 
+        }
+
+        try {
+            // Tembak abstrak ke Backend API
+            const response = await fetch('/api/scan-sdg', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ abstract: text })
+            });
+
+            const data = await response.json();
+            const detectedSdgs = data.detected || []; 
+
+            let newlyDetectedCount = 0;
+            let detectedShortNames = [];
+            let fullSdgNames = [];
+
+            detectedSdgs.forEach(sdgId => {
+                const key = sdgId.toLowerCase(); 
+                if (sdgFullNames[key]) {
+                    newlyDetectedCount++;
+                    detectedShortNames.push(sdgFullNames[key].split(':')[0]); 
+                    fullSdgNames.push(sdgFullNames[key]); 
+                }
+            });
+
+            // 🪄 SUNTIKKAN SEBAGAI HIDDEN INPUT & MUNCULKAN BADGE VISUAL
+            hiddenSdgContainer.innerHTML = ''; // Bersihkan data lama
+            if (badgeContainer) badgeContainer.innerHTML = ''; // Bersihkan badge lama
+
+            if (fullSdgNames.length > 0) {
+                fullSdgNames.forEach(sdgName => {
+                    // 1. Ciptakan Hidden Input secara gaib (Nilai dikirim ke Controller Laravel bos)
+                    hiddenSdgContainer.insertAdjacentHTML('beforeend', `<input type="hidden" name="sdgs[]" value="${sdgName}">`);
+
+                    // 2. Render Badge visual untuk dinikmati mata user
+                    if (badgeContainer) {
+                        let badgeHtml = `
+                            <span class="badge rounded-pill shadow-sm" style="background-color: #003366; font-size: 0.8em; padding: 6px 12px; border: 1px solid #002244; transform: scale(0); animation: popIn 0.3s forwards;">
+                                <i class="bi bi-robot text-info me-1"></i> ${sdgName}
+                            </span>
+                        `;
+                        badgeContainer.insertAdjacentHTML('beforeend', badgeHtml);
+                    }
+                });
+            }
+
+            // Munculkan Toast Pop-up
+            if (newlyDetectedCount > 0 && showToast) {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 4500,
+                    timerProgressBar: true
+                });
+
+                Toast.fire({
+                    icon: 'success',
+                    title: '🤖 Smart AI Scan',
+                    text: `Auto-detected ${newlyDetectedCount} goals: ${detectedShortNames.join(', ')}`
+                });
+            }
+
+        } catch (error) {
+            console.error("AI Scan Failed:", error);
+        }
+    }
+
+    if (abstractInput) {
+        abstractInput.addEventListener('input', function() {
+            clearTimeout(aiDebounceTimer);
+            aiDebounceTimer = setTimeout(() => scanAbstractForSDG(true), 1500);
+        });
+
+        setTimeout(() => scanAbstractForSDG(false), 500);
+    }
+    // ==========================================
 </script>
 
 @include('partials.footer')

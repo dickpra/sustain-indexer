@@ -109,6 +109,10 @@ Route::post('/resend-email', [VerificationController::class, 'resendEmail'])->mi
 Route::get('/submit-beta', [BetaSubmitController::class, 'create']);
 Route::post('/submit-beta/scan', [BetaSubmitController::class, 'scanPdfHybrid']);
 Route::post('/submit-beta/save', [BetaSubmitController::class, 'storeFinal']);
+// ==========================================
+// RUTE API: BETA AI SDG SCANNER
+// ==========================================
+Route::post('/api/scan-sdg', [\App\Http\Controllers\BetaSubmitController::class, 'scanSdgKeywords']);
 
 // 🔥 TAMBAHAN BARU: Jaring pengaman kalau Laravel melakukan redirect back()
 Route::get('/submit-beta/scan', function () {

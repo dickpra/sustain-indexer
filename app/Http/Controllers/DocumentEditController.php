@@ -76,7 +76,7 @@ class DocumentEditController extends Controller
         $request->validate([
             'title' => 'required|string',
             'abstract' => 'required|string',
-            'sdgs' => 'required|array|min:1',
+            'sdgs' => 'nullable|array',
             'document_type' => 'required|string',
             'authors' => 'required|array|min:1',
             'authors.*.name' => 'required|string',
@@ -88,43 +88,37 @@ class DocumentEditController extends Controller
 
         \Illuminate\Support\Facades\DB::beginTransaction();
         try {
-            // ==========================================
-            // 🔥 MAGIC PENGGABUNGAN SDGs (ANTI DUPLIKAT)
-            // ==========================================
-            $rawKeywords = $request->input('keywords', '');
             
-            // 1. Pecah teks keyword dari form menjadi array (dipisah koma)
-            $keywordArray = array_map('trim', explode(',', $rawKeywords));
-            
-            // 2. FILTER: Buang teks SDG lama yang ikut ter-load di text input Keywords
-            $cleanKeywords = array_filter($keywordArray, function($kw) {
-                // Hapus string yang depannya "SDG 1:", "SDG 12:", dll
-                return !preg_match('/^SDG \d+:/i', $kw); 
-            });
-            
-            // 3. Ambil SDG baru yang barusan dicentang di form
-            $newSdgs = $request->input('sdgs', []);
-            
-            // 4. Gabungkan Keyword bersih dengan SDG yang baru
-            $finalKeywordsArray = array_merge($cleanKeywords, $newSdgs);
-            
-            // 5. Jadikan 1 kalimat utuh lagi pakai koma (buang elemen yang kosong)
-            $finalKeywords = implode(', ', array_filter($finalKeywordsArray));
-
-
             // 1. Update Tabel Utama Dokumen
             $document->update([
                 'title' => $request->title,
                 'journal_title' => $request->journal_title,
                 'publisher' => $request->publisher,
                 'abstract' => $request->abstract,
-                'keywords' => $finalKeywords, // 🔥 GUNAKAN KEYWORD HASIL GABUNGAN DI SINI
+                'keywords' => $request->input('keywords', ''), // 🔥 KEMBALIKAN HANYA MENYIMPAN KEYWORD MURNI
                 'document_type' => $request->document_type,
                 'pub_year' => $request->pub_year,
                 'doi' => $request->doi,
                 'pages' => $request->pages,
                 'reference_count' => $request->reference_count,
             ]);
+
+            // ==========================================
+            // 🔥 UPDATE TABEL RELASI SDG
+            // ==========================================
+            // Hapus semua data SDG lama milik dokumen ini
+            $document->sdgs()->delete();
+
+            // Simpan data SDG baru (jika AI menemukannya di form edit)
+            if ($request->has('sdgs') && is_array($request->sdgs)) {
+                foreach ($request->sdgs as $sdgFullName) {
+                    $parts = explode(':', $sdgFullName);
+                    $document->sdgs()->create([
+                        'sdg_code' => trim($parts[0]),
+                        'sdg_name' => $sdgFullName
+                    ]);
+                }
+            }
 
             // 2. Sinkronisasi Data Author & Institusi
             $authorIdsToSync = [];

@@ -190,12 +190,6 @@ class PdfSubmissionController extends Controller
             $docNumber = 'IDX-' . rand(100000, 999999);
             $token = \Illuminate\Support\Str::random(40);
 
-            // 2. 🔥 MAGIC PENGGABUNGAN KEWORD & SDGs
-            $originalKeywords = trim($request->input('keywords', ''));
-            $sdgsString = implode(', ', $request->input('sdgs')); // Gabungkan array SDG jadi 1 kalimat
-            
-            // Kalau keyword aslinya kosong, pakai SDG saja. Kalau ada, gabungkan pakai koma.
-            $finalKeywords = empty($originalKeywords) ? $sdgsString : $originalKeywords . ', ' . $sdgsString;
 
             $document = Document::create([
                 'document_number' => $docNumber,
@@ -203,7 +197,7 @@ class PdfSubmissionController extends Controller
                 'journal_title' => $request->journal_title, // <-- Tambahan baru
                 'publisher' => $request->publisher,
                 'abstract' => $request->abstract,
-                'keywords' => $finalKeywords,
+                'keywords' => $request->input('keywords', ''),
                 'document_type' => $request->document_type,
                 'pub_year' => $request->pub_year,
                 'pages' => $request->pages,                     
@@ -216,6 +210,21 @@ class PdfSubmissionController extends Controller
                 'submitter_email' => $request->submitter_email,           
                 'is_peer_reviewed' => true, 
             ]);
+
+            // 🔥 SIMPAN DATA SDGs DARI BETA AI (JIKA ADA)
+            if ($request->has('sdgs') && is_array($request->sdgs)) {
+                foreach ($request->sdgs as $sdgFullName) {
+                    // Pecah "SDG 1: No Poverty" menjadi "SDG 1" saja untuk kolom code
+                    $parts = explode(':', $sdgFullName);
+                    $code = trim($parts[0]);
+
+                    // Simpan ke tabel relasi document_sdgs
+                    $document->sdgs()->create([
+                        'sdg_code' => $code,
+                        'sdg_name' => $sdgFullName
+                    ]);
+                }
+            }
 
             // =========================================================
             // 🔥 FITUR BARU: LANGSUNG CATAT KE TABEL HISTORY SAAT SUBMIT

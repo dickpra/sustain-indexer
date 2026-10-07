@@ -35,4 +35,9 @@ class Document extends Model
         // Kalau ada di history, pakai angka itu. Kalau tabelnya masih kosong (belum disync), pakai angka bawaan form.
         return $latestHistory ? $latestHistory->citation_count : $this->citation_count;
     }
+
+    public function sdgs()
+    {
+        return $this->hasMany(DocumentSdg::class);
+    }
 }

@@ -24,6 +24,7 @@
         .doi-box { background-color: #f8f9fa; border-left: 4px solid #198754; padding: 15px 20px; margin-top: 40px; border-radius: 4px; }
         .keyword-badge { background-color: #e9ecef; color: #495057; padding: 5px 12px; border-radius: 4px; font-size: 0.85rem; margin-right: 5px; border: 1px solid #dee2e6; }
         .academic-footer { background-color: #f1f3f5; padding: 40px 0 20px 0; margin-top: 60px; border-top: 1px solid #d5d5d5; }
+        .hover-sdg:hover { background-color: #cc0000 !important; color: white !important; transform: translateY(-1px); }
     </style>
 </head>
 <body>
@@ -130,6 +131,23 @@
             <div class="abstract-text text-justify" style="line-height: 1.7;">
                 {{ $document->abstract }}
             </div>
+
+            <!-- 🔥 WIDGET BADGE SDGs SHOW/DETAIL -->
+            @if($document->sdgs && $document->sdgs->count() > 0)
+                <div class="mt-4 mb-3 p-3 rounded-3 shadow-sm" style="background-color: #f8f9fa; border-left: 4px solid #003366;">
+                    <h6 class="fw-bold mb-2" style="color: #003366; font-size: 0.9rem;">
+                        <i class="bi bi-globe-americas me-2"></i>Sustainable Development Goals
+                    </h6>
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        @foreach($document->sdgs as $sdg)
+                            <!-- Dibuat menjadi link agar bisa langsung mem-filter pencarian! -->
+                            <a href="/results?sdg={{ urlencode($sdg->sdg_code) }}" class="badge shadow-sm text-decoration-none hover-sdg" style="background-color: #003366; color: white; font-size: 0.85rem; padding: 8px 12px; transition: 0.2s;">
+                                {{ $sdg->sdg_name }}
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
 
             @if($document->keywords)
                 <div class="mt-4 pt-3 border-top">

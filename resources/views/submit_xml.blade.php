@@ -26,6 +26,18 @@
         /* Desain Blok Author */
         .author-block { background-color: #f8f9fa; border: 1px solid #e0e0e0; padding: 20px; margin-bottom: 15px; position: relative; }
         .author-badge { position: absolute; top: -12px; left: 15px; background: #003366; color: white; padding: 2px 15px; font-size: 0.85em; font-weight: bold; }
+
+        .header-logo {
+        width: 250px;
+        height: auto;
+        display: block;
+        }
+
+        @media (max-width: 767px) {
+            .header-logo {
+                margin: 0 auto;
+            }
+        }
     </style>
 </head>
 <body>

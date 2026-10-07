@@ -19,7 +19,7 @@ class SearchController extends Controller
             $publisherFilter = $request->query('publisher');
             $sdgFilter = $request->query('sdg'); 
             
-            $baseQuery = Document::with('authors.institution')->where('is_verified', true);
+            $baseQuery = Document::with(['authors.institution', 'sdgs'])->where('is_verified', true);
 
             // ==========================================
             // 🔥 FEATURED PROFILES (SMART MULTI-MATCH MAX 3)
@@ -111,7 +111,11 @@ class SearchController extends Controller
 
             $sdgFacets = [];
             foreach ($sdgDictionary as $sdgKey => $sdgName) {
-                $countSdg = (clone $baseQuery)->where('keywords', 'like', "%{$sdgKey}%")->count();
+                // 🔥 PERBAIKAN: Cari dari tabel relasi sdgs, bukan keywords
+                $countSdg = (clone $baseQuery)->whereHas('sdgs', function($q) use ($sdgKey) {
+                    $q->where('sdg_code', $sdgKey); 
+                })->count();
+
                 if ($countSdg > 0) {
                     $sdgFacets[$sdgKey] = ['name' => $sdgName, 'count' => $countSdg];
                 }
@@ -124,7 +128,12 @@ class SearchController extends Controller
             $query = clone $baseQuery;
             if ($type) $query->where('document_type', $type);
             if ($publisherFilter) $query->where('publisher', $publisherFilter);
-            if ($sdgFilter) $query->where('keywords', 'like', "%{$sdgFilter}%"); 
+            // 🔥 PERBAIKAN: Filter eksekusi berdasarkan tabel relasi
+            if ($sdgFilter) {
+                $query->whereHas('sdgs', function($q) use ($sdgFilter) {
+                    $q->where('sdg_code', $sdgFilter);
+                });
+            }
             
             if ($year) {
                 if (\Illuminate\Support\Str::startsWith($year, 'exact_')) {

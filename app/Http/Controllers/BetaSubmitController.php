@@ -237,7 +237,7 @@ class BetaSubmitController extends Controller
         $request->validate([
             'title' => 'required|string',
             'abstract' => 'required|string',
-            'sdgs' => 'required|array|min:1',
+            'sdgs' => 'nullable|array',
             'document_type' => 'required|string',
             'submitter_first_name' => 'required|string',
             'submitter_last_name' => 'required|string',
@@ -296,9 +296,6 @@ class BetaSubmitController extends Controller
         // 3. Simpan ke Tabel Documents
         $docNumber = 'IDX-' . rand(100000, 999999); 
 
-        $originalKeywords = trim($request->input('keywords', ''));
-        $sdgsString = implode(', ', $request->input('sdgs')); 
-        $finalKeywords = empty($originalKeywords) ? $sdgsString : $originalKeywords . ', ' . $sdgsString;
 
         $document = \App\Models\Document::create([
             'document_number' => $docNumber,
@@ -309,7 +306,7 @@ class BetaSubmitController extends Controller
             'document_type' => $request->document_type, 
             'pub_year' => $request->pub_year,
             'doi' => $doi, 
-            'keywords' => $finalKeywords,
+            'keywords' => $request->input('keywords', ''),
             'pages' => $request->pages, 
             'reference_count' => $request->reference_count, 
             'is_verified' => false, 
@@ -320,6 +317,21 @@ class BetaSubmitController extends Controller
             'submitter_email' => $request->submitter_email,
             'verification_token' => \Illuminate\Support\Str::random(40),
         ]);
+
+        // 🔥 SIMPAN DATA SDGs DARI BETA AI (JIKA ADA)
+        if ($request->has('sdgs') && is_array($request->sdgs)) {
+            foreach ($request->sdgs as $sdgFullName) {
+                // Pecah "SDG 1: No Poverty" menjadi "SDG 1" saja untuk kolom code
+                $parts = explode(':', $sdgFullName);
+                $code = trim($parts[0]);
+
+                // Simpan ke tabel relasi document_sdgs
+                $document->sdgs()->create([
+                    'sdg_code' => $code,
+                    'sdg_name' => $sdgFullName
+                ]);
+            }
+        }
 
         \Illuminate\Support\Facades\DB::table('citation_histories')->insert([
             'document_id' => $document->id,
@@ -388,5 +400,36 @@ class BetaSubmitController extends Controller
             'status' => 'success',
             'confirmation_id' => $document->document_number
         ], 200);
+    }
+
+    public function scanSdgKeywords(\Illuminate\Http\Request $request)
+    {
+        $text = strtolower($request->input('abstract', ''));
+        $detectedSdgs = [];
+
+        // Kalau abstraknya terlalu pendek, batalkan
+        if (strlen($text) < 30) {
+            return response()->json(['detected' => []]);
+        }
+
+        // Panggil kamus raksasa dari Config tadi
+        $dictionary = config('sdg.keywords');
+
+        foreach ($dictionary as $sdgId => $keywords) {
+            $matchCount = 0;
+            
+            foreach ($keywords as $kw) {
+                if (str_contains($text, strtolower($kw))) {
+                    $matchCount++;
+                    // Syarat: Minimal 2 kata kunci berbeda harus ketemu!
+                    if ($matchCount >= 2) {
+                        $detectedSdgs[] = $sdgId; // Simpan kode SDG-nya, misal: 'sdg14'
+                        break;
+                    }
+                }
+            }
+        }
+
+        return response()->json(['detected' => $detectedSdgs]);
     }
 }

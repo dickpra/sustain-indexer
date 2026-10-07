@@ -94,8 +94,8 @@
                 <div class="filter-header bg-light border-bottom p-2 fw-bold text-secondary small text-uppercase" style="letter-spacing: 0.5px;">Sustainable Goals</div>
                 <ul class="filter-list list-unstyled p-2 mb-0 small">
                     @forelse($sdgFacets as $sdgCode => $data)
-                        <li class="filter-item filter-sdg p-1 d-flex justify-content-between align-items-center {{ request('sdg') == $sdgCode ? 'active' : '' }}" 
-                            data-sdg="{{ $sdgCode }}" 
+                        <li class="filter-sdg p-1 d-flex justify-content-between align-items-center {{ request('sdg') == $sdgCode ? 'active' : '' }}" 
+                            data-sdg="{{ $sdgCode }}"
                             style="cursor:pointer;"
                             title="{{ $sdgCode }}: {{ $data['name'] }}"> <span class="text-truncate" style="max-width: 85%;">
                                 <strong class="text-primary">{{ $sdgCode }}:</strong> <span class="text-muted">{{ $data['name'] }}</span>
@@ -294,8 +294,20 @@
                                 <span class="ms-2">| <a href="{{ $item->doi }}" target="_blank" class="text-success text-decoration-none fw-bold">DOI</a></span>
                                 @endif
                                 
+                                <!-- 🔥 WIDGET BADGE SDGs BARU (Membaca Tabel Relasi) -->
+                                @if($item->sdgs && $item->sdgs->count() > 0)
+                                <div class="mt-3 mb-2 d-flex flex-wrap gap-1">
+                                    @foreach($item->sdgs as $sdg)
+                                        <a href="/results?sdg={{ urlencode($sdg->sdg_code) }}" class="badge rounded-pill shadow-sm text-decoration-none" style="background-color: #f4f8fc; color: #003366; border: 1px solid #003366; font-weight: bold; font-size: 0.75rem;">
+                                            <i class="bi bi-bullseye text-danger me-1"></i> {{ $sdg->sdg_code }}
+                                        </a>
+                                    @endforeach
+                                </div>
+                                @endif
+
+                                <!-- WIDGET KEYWORDS BIASA (Sekarang murni hanya teks) -->
                                 @if($item->keywords)
-                                <div class="mt-3">
+                                <div class="mt-2">
                                     @foreach(explode(',', $item->keywords) as $kw)
                                         @if(trim($kw))
                                         <a href="/results?q={{ urlencode(trim($kw)) }}" class="badge bg-light text-secondary border text-decoration-none me-2 mb-1 hover-keyword" style="transition: 0.2s;"># {{ trim($kw) }}</a>
