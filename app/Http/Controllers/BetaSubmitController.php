@@ -131,7 +131,7 @@ class BetaSubmitController extends Controller
                 $groqResponse = \Illuminate\Support\Facades\Http::withToken(env('GROQ_API_KEY'))
                     ->timeout(15)
                     ->post('https://api.groq.com/openai/v1/chat/completions', [
-                        'model' => 'meta-llama/llama-4-scout-17b-16e-instruct', // Model Llama 3 yang super cepat
+                        'model' => 'openai/gpt-oss-120b', // Model Llama 3 yang super cepat
                         'response_format' => ['type' => 'json_object'], 
                         'messages' => [
                             [
@@ -404,26 +404,52 @@ class BetaSubmitController extends Controller
 
     public function scanSdgKeywords(\Illuminate\Http\Request $request)
     {
-        $text = strtolower($request->input('abstract', ''));
+        $originalText = $request->input('abstract', '');
         $detectedSdgs = [];
 
-        // Kalau abstraknya terlalu pendek, batalkan
-        if (strlen($text) < 30) {
+        // 1. Batalkan jika terlalu pendek
+        if (strlen($originalText) < 30) {
             return response()->json(['detected' => []]);
         }
 
-        // Panggil kamus raksasa dari Config tadi
+        // ==========================================
+        // 🌍 MAGIC TRANSLATOR (STICHOZA) 100% FREE
+        // ==========================================
+        $textToScan = strtolower($originalText); // Fallback bawaan
+
+        try {
+            // Inisialisasi Translator: Target English ('en'), Source Auto-detect (null)
+            $tr = new \Stichoza\GoogleTranslate\GoogleTranslate('en');
+            
+            // Lakukan translasi diam-diam di server
+            $translated = $tr->translate($originalText);
+            
+            if ($translated) {
+                $textToScan = strtolower($translated);
+                \Illuminate\Support\Facades\Log::info("AI Translate Success: " . substr($textToScan, 0, 50) . "...");
+            }
+        } catch (\Exception $e) {
+            // Kalau Google error/limit, abaikan dan tetap pakai teks bahasa aslinya
+            \Illuminate\Support\Facades\Log::warning("AI Translate Failed: " . $e->getMessage());
+        }
+        // ==========================================
+
+        // 2. Panggil kamus raksasa dari Config
         $dictionary = config('sdg.keywords');
 
+        if (!$dictionary) {
+             return response()->json(['error' => 'Dictionary not found'], 500);
+        }
+
+        // 3. Scan menggunakan teks yang sudah menjadi Bahasa Inggris
         foreach ($dictionary as $sdgId => $keywords) {
             $matchCount = 0;
-            
             foreach ($keywords as $kw) {
-                if (str_contains($text, strtolower($kw))) {
+                // Cek ke dalam teks hasil terjemahan ($textToScan)
+                if (str_contains($textToScan, strtolower($kw))) {
                     $matchCount++;
-                    // Syarat: Minimal 2 kata kunci berbeda harus ketemu!
                     if ($matchCount >= 2) {
-                        $detectedSdgs[] = $sdgId; // Simpan kode SDG-nya, misal: 'sdg14'
+                        $detectedSdgs[] = strtoupper($sdgId);
                         break;
                     }
                 }

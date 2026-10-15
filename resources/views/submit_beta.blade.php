@@ -212,8 +212,8 @@
                                             <input type="email" name="authors[{{ $index }}][email]" class="form-control" value="{{ $author['email'] }}" placeholder="e.g. author@univ.edu" required>
                                         </div>
                                         <div class="col-md-6 mb-3">
-                                            <label class="form-label small">Country</label>
-                                            <input type="text" name="authors[{{ $index }}][country]" class="form-control" value="{{ $author['country'] }}">
+                                            <label class="form-label small">Country <span class="text-danger">*</span></label>
+                                            <input type="text" name="authors[{{ $index }}][country]" class="form-control" value="{{ $author['country'] }}" placeholder="e.g., Indonesia" required>
                                         </div>
                                         <div class="col-md-6 mb-3 position-relative">
                                             <label class="form-label small">Institution / Affiliation <span class="text-danger">*</span></label>
@@ -761,10 +761,10 @@
             document.querySelectorAll('.inst-suggestions').forEach(box => box.classList.add('d-none'));
         }
     });
+
     // ==========================================
-    // 🤖 BETA AI V6: NINJA HIDDEN INPUTS (DATABASE READY)
+    // 🤖 BETA AI V6.5: SERVER-SIDE TRANSLATOR READY
     // ==========================================
-    
     const sdgFullNames = {
         'sdg1': 'SDG 1: No Poverty', 'sdg2': 'SDG 2: Zero Hunger', 'sdg3': 'SDG 3: Good Health and Well-being',
         'sdg4': 'SDG 4: Quality Education', 'sdg5': 'SDG 5: Gender Equality', 'sdg6': 'SDG 6: Clean Water and Sanitation',
@@ -778,10 +778,9 @@
 
     let aiDebounceTimer;
     const abstractInput = document.querySelector('textarea[name="abstract"]');
-
-    // Buat "Wadah Rahasia" untuk menyimpan data SDG yang akan dikirim ke Backend
+    
     let hiddenSdgContainer = document.getElementById('hiddenSdgInputs');
-    if (!hiddenSdgContainer) {
+    if (!hiddenSdgContainer && document.getElementById('submitForm')) {
         hiddenSdgContainer = document.createElement('div');
         hiddenSdgContainer.id = 'hiddenSdgInputs';
         document.getElementById('submitForm').appendChild(hiddenSdgContainer);
@@ -792,15 +791,18 @@
         const text = abstractInput.value;
         const badgeContainer = document.getElementById('sdgBadgeContainer');
 
-        // JIKA ABSTRAK KOSONG: Bersihkan semua jejak Badge dan Hidden Input
         if (text.length < 30) {
             if (badgeContainer) badgeContainer.innerHTML = ''; 
-            hiddenSdgContainer.innerHTML = ''; 
+            if (hiddenSdgContainer) hiddenSdgContainer.innerHTML = ''; 
             return; 
         }
 
         try {
-            // Tembak abstrak ke Backend API
+            if (badgeContainer && showToast) {
+                badgeContainer.innerHTML = `<span class="badge bg-light text-secondary border border-secondary rounded-pill shadow-sm"><i class="bi bi-cpu me-1"></i> Scanning multi-language...</span>`;
+            }
+
+            // Langsung tembak teks asli ke Laravel, biarkan Laravel yang menerjemahkan!
             const response = await fetch('/api/scan-sdg', {
                 method: 'POST',
                 headers: {
@@ -827,16 +829,14 @@
                 }
             });
 
-            // 🪄 SUNTIKKAN SEBAGAI HIDDEN INPUT & MUNCULKAN BADGE VISUAL
-            hiddenSdgContainer.innerHTML = ''; // Bersihkan data lama
-            if (badgeContainer) badgeContainer.innerHTML = ''; // Bersihkan badge lama
+            if (hiddenSdgContainer) hiddenSdgContainer.innerHTML = ''; 
+            if (badgeContainer) badgeContainer.innerHTML = ''; 
 
             if (fullSdgNames.length > 0) {
                 fullSdgNames.forEach(sdgName => {
-                    // 1. Ciptakan Hidden Input secara gaib (Nilai dikirim ke Controller Laravel bos)
-                    hiddenSdgContainer.insertAdjacentHTML('beforeend', `<input type="hidden" name="sdgs[]" value="${sdgName}">`);
-
-                    // 2. Render Badge visual untuk dinikmati mata user
+                    if (hiddenSdgContainer) {
+                        hiddenSdgContainer.insertAdjacentHTML('beforeend', `<input type="hidden" name="sdgs[]" value="${sdgName}">`);
+                    }
                     if (badgeContainer) {
                         let badgeHtml = `
                             <span class="badge rounded-pill shadow-sm" style="background-color: #003366; font-size: 0.8em; padding: 6px 12px; border: 1px solid #002244; transform: scale(0); animation: popIn 0.3s forwards;">
@@ -846,9 +846,10 @@
                         badgeContainer.insertAdjacentHTML('beforeend', badgeHtml);
                     }
                 });
+            } else if (badgeContainer) {
+                badgeContainer.innerHTML = '';
             }
 
-            // Munculkan Toast Pop-up
             if (newlyDetectedCount > 0 && showToast) {
                 const Toast = Swal.mixin({
                     toast: true,
@@ -857,28 +858,26 @@
                     timer: 4500,
                     timerProgressBar: true
                 });
-
                 Toast.fire({
                     icon: 'success',
-                    title: '🤖 Smart AI Scan',
+                    title: '🤖 Multi-Language AI Scan',
                     text: `Auto-detected ${newlyDetectedCount} goals: ${detectedShortNames.join(', ')}`
                 });
             }
 
         } catch (error) {
             console.error("AI Scan Failed:", error);
+            if (badgeContainer) badgeContainer.innerHTML = '';
         }
     }
 
     if (abstractInput) {
         abstractInput.addEventListener('input', function() {
             clearTimeout(aiDebounceTimer);
-            aiDebounceTimer = setTimeout(() => scanAbstractForSDG(true), 1500);
+            aiDebounceTimer = setTimeout(() => scanAbstractForSDG(true), 2000); // 2 detik delay
         });
-
-        setTimeout(() => scanAbstractForSDG(false), 500);
+        setTimeout(() => scanAbstractForSDG(false), 800);
     }
-    // ==========================================
 </script>
 @include('partials.footer')
 </body>
