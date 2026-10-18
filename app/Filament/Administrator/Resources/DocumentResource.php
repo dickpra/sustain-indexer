@@ -9,12 +9,19 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class DocumentResource extends Resource
 {
     protected static ?string $model = Document::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-magnifying-glass';
     protected static ?string $navigationGroup = 'Indexing Management';
+
+    // 🔥 Mencegah N+1 Query agar tabel admin tidak lemot
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(['sdgs', 'authors']);
+    }
 
     public static function form(Form $form): Form
     {
@@ -24,8 +31,7 @@ class DocumentResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('document_number')
                             ->required()
-                            ->disabled() // Nomor dokumen biar ga bisa diubah sembarangan
-                            ->dehydrated()
+                            // Admin bisa mengedit nomor dokumen jika sangat mendesak
                             ->maxLength(255),
                             
                         Forms\Components\TextInput::make('title')
@@ -35,64 +41,117 @@ class DocumentResource extends Resource
                         Forms\Components\TextInput::make('journal_title'),
                         Forms\Components\TextInput::make('publisher'),
 
+                        // ==========================================
+                        // 🔥 ABSTRAK DENGAN LIVE AI TRANSLATOR & SCANNER
+                        // ==========================================
                         Forms\Components\Textarea::make('abstract')
                             ->required()
                             ->columnSpanFull()
-                            ->rows(4),
+                            ->rows(5)
+                            ->live(debounce: 2000) // Menunggu 2 detik setelah admin mengetik
+                            ->afterStateUpdated(function (\Filament\Forms\Set $set, $state) {
+                                if (empty($state) || strlen($state) < 30) {
+                                    $set('sdg_selections', []);
+                                    return;
+                                }
 
-                        // 🔥 TRIK SIHIR SDGs (Sama kayak Publisher)
-                        \Filament\Forms\Components\CheckboxList::make('sdg_selections')
+                                $textToScan = strtolower($state);
+                                try {
+                                    $tr = new \Stichoza\GoogleTranslate\GoogleTranslate('en');
+                                    $translated = $tr->translate($state);
+                                    if ($translated) {
+                                        $textToScan = strtolower($translated);
+                                    }
+                                } catch (\Exception $e) {
+                                    // Abaikan jika error, pakai teks asli
+                                }
+
+                                $dictionary = config('sdg.keywords');
+                                $sdgFullNames = [
+                                    'sdg1' => 'SDG 1: No Poverty', 'sdg2' => 'SDG 2: Zero Hunger', 'sdg3' => 'SDG 3: Good Health and Well-being',
+                                    'sdg4' => 'SDG 4: Quality Education', 'sdg5' => 'SDG 5: Gender Equality', 'sdg6' => 'SDG 6: Clean Water and Sanitation',
+                                    'sdg7' => 'SDG 7: Affordable and Clean Energy', 'sdg8' => 'SDG 8: Decent Work and Economic Growth',
+                                    'sdg9' => 'SDG 9: Industry Innovation and Infrastructure', 'sdg10' => 'SDG 10: Reduced Inequality',
+                                    'sdg11' => 'SDG 11: Sustainable Cities and Communities', 'sdg12' => 'SDG 12: Responsible Consumption and Production',
+                                    'sdg13' => 'SDG 13: Climate Action', 'sdg14' => 'SDG 14: Life Below Water', 'sdg15' => 'SDG 15: Life on Land',
+                                    'sdg16' => 'SDG 16: Peace and Justice Strong Institutions', 'sdg17' => 'SDG 17: Partnerships to achieve the Goal'
+                                ];
+
+                                $detectedSdgs = [];
+                                if ($dictionary) {
+                                    foreach ($dictionary as $sdgId => $keywords) {
+                                        $matchCount = 0;
+                                        foreach ($keywords as $kw) {
+                                            if (str_contains($textToScan, strtolower($kw))) {
+                                                $matchCount++;
+                                                if ($matchCount >= 2) {
+                                                    $key = strtolower($sdgId);
+                                                    if (isset($sdgFullNames[$key])) {
+                                                        $detectedSdgs[] = $sdgFullNames[$key];
+                                                    }
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                $set('sdg_selections', $detectedSdgs);
+                                if (count($detectedSdgs) > 0) {
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('🤖 AI Auto-Scan Success')
+                                        ->body('Deteksi ulang SDG berhasil.')
+                                        ->success()->send();
+                                }
+                            }),
+
+                        // ==========================================
+                        // 🔥 WIDGET BADGE SDGs (HANYA BACA)
+                        // ==========================================
+                        \Filament\Forms\Components\Placeholder::make('sdg_badges')
                             ->label('Sustainable Development Goals (SDGs)')
-                            ->options([
-                                "SDG 1: No Poverty" => "SDG 1: No Poverty",
-                                "SDG 2: Zero Hunger" => "SDG 2: Zero Hunger",
-                                "SDG 3: Good Health and Well-being" => "SDG 3: Good Health",
-                                "SDG 4: Quality Education" => "SDG 4: Quality Education",
-                                "SDG 5: Gender Equality" => "SDG 5: Gender Equality",
-                                "SDG 6: Clean Water and Sanitation" => "SDG 6: Clean Water",
-                                "SDG 7: Affordable and Clean Energy" => "SDG 7: Clean Energy",
-                                "SDG 8: Decent Work and Economic Growth" => "SDG 8: Economic Growth",
-                                "SDG 9: Industry, Innovation and Infrastructure" => "SDG 9: Industry & Innovation",
-                                "SDG 10: Reduced Inequality" => "SDG 10: Reduced Inequality",
-                                "SDG 11: Sustainable Cities and Communities" => "SDG 11: Sustainable Cities",
-                                "SDG 12: Responsible Consumption and Production" => "SDG 12: Responsible Consumption",
-                                "SDG 13: Climate Action" => "SDG 13: Climate Action",
-                                "SDG 14: Life Below Water" => "SDG 14: Life Below Water",
-                                "SDG 15: Life on Land" => "SDG 15: Life on Land",
-                                "SDG 16: Peace and Justice Strong Institutions" => "SDG 16: Peace & Justice",
-                                "SDG 17: Partnerships to achieve the Goal" => "SDG 17: Partnerships"
-                            ])
-                            ->columns(3)
-                            ->gridDirection('row')
-                            ->columnSpanFull()
+                            ->content(function (\Filament\Forms\Get $get) {
+                                $sdgs = $get('sdg_selections') ?? [];
+                                if (empty($sdgs)) {
+                                    return new \Illuminate\Support\HtmlString('<span style="color: #888; font-style: italic;">⏳ Menunggu teks abstrak...</span>');
+                                }
+                                $html = '<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 5px;">';
+                                foreach ($sdgs as $sdg) {
+                                    $html .= '<span style="background-color: #003366; color: white; padding: 6px 14px; border-radius: 99px; font-size: 0.85rem; font-weight: bold;">🤖 ' . e($sdg) . '</span>';
+                                }
+                                $html .= '</div>';
+                                return new \Illuminate\Support\HtmlString($html);
+                            })
+                            ->columnSpanFull(),
+
+                        // ==========================================
+                        // 🔥 HIDDEN INPUT (Simpan relasi SDG ke database)
+                        // ==========================================
+                        \Filament\Forms\Components\Hidden::make('sdg_selections')
                             ->dehydrated(false)
-                            ->default([])
-                            ->afterStateHydrated(function (\Filament\Forms\Components\CheckboxList $component, $state, $record) {
-                                if ($record && $record->keywords) {
-                                    $keywordsArray = array_map('trim', explode(',', $record->keywords));
-                                    $sdgs = array_filter($keywordsArray, fn($kw) => str_starts_with($kw, 'SDG'));
-                                    $component->state(array_values($sdgs));
+                            ->afterStateHydrated(function (\Filament\Forms\Components\Hidden $component, $record) {
+                                if ($record && $record->sdgs) {
+                                    $component->state($record->sdgs->pluck('sdg_name')->toArray());
                                 } else {
                                     $component->state([]);
+                                }
+                            })
+                            ->saveRelationshipsUsing(function (\Illuminate\Database\Eloquent\Model $record, $state) {
+                                $record->sdgs()->delete();
+                                if (is_array($state) && count($state) > 0) {
+                                    foreach ($state as $sdgName) {
+                                        $parts = explode(':', $sdgName);
+                                        $record->sdgs()->create([
+                                            'sdg_code' => trim($parts[0]),
+                                            'sdg_name' => $sdgName
+                                        ]);
+                                    }
                                 }
                             }),
 
                         \Filament\Forms\Components\TextInput::make('keywords')
                             ->label('Keywords (Non-SDG)')
-                            ->columnSpanFull()
-                            ->afterStateHydrated(function (\Filament\Forms\Components\TextInput $component, $state, $record) {
-                                if ($record && $record->keywords) {
-                                    $keywordsArray = array_map('trim', explode(',', $record->keywords));
-                                    $pureKeywords = array_filter($keywordsArray, fn($kw) => !str_starts_with($kw, 'SDG'));
-                                    $component->state(implode(', ', $pureKeywords));
-                                }
-                            })
-                            ->dehydrateStateUsing(function ($state, \Filament\Forms\Get $get) {
-                                $sdgs = $get('sdg_selections') ?? [];
-                                $pureKeywords = array_filter(array_map('trim', explode(',', $state)));
-                                $finalKeywords = array_merge($pureKeywords, $sdgs);
-                                return implode(', ', $finalKeywords);
-                            }),
+                            ->helperText('Pisahkan dengan koma')
+                            ->columnSpanFull(),
 
                         Forms\Components\Select::make('document_type')
                             ->options([
@@ -109,11 +168,23 @@ class DocumentResource extends Resource
 
                 \Filament\Forms\Components\Section::make('2. Authors Relation')
                     ->schema([
+                        // Tampilan Relasi Author yang lebih informatif untuk Admin
                         \Filament\Forms\Components\Select::make('authors')
                             ->relationship('authors', 'name')
                             ->multiple()
                             ->searchable(['name', 'email'])
                             ->preload()
+                            ->allowHtml()
+                            ->getOptionLabelFromRecordUsing(function (\App\Models\Author $record) {
+                                $institutionName = $record->institution ? $record->institution->name : 'No Institution';
+                                return "
+                                    <div style='display:flex; flex-direction:column;'>
+                                        <strong style='color: #003366;'>{$record->name}</strong>
+                                        <span style='font-size: 0.85rem; color: #666;'>📧 {$record->email}</span>
+                                        <span style='font-size: 0.8rem; color: #006600;'>🏛️ {$institutionName}</span>
+                                    </div>
+                                ";
+                            })
                             ->columnSpanFull(),
                     ]),
 
@@ -130,11 +201,12 @@ class DocumentResource extends Resource
                         Forms\Components\TextInput::make('citation_count')->numeric(),
                         Forms\Components\TextInput::make('views')->numeric(),
 
+                        // 🔥 ADMIN KINI BISA MENGEDIT DATA SUBMITTER JIKA ADA KESALAHAN TYPO
                         Forms\Components\Fieldset::make('Submitter Info')
                             ->schema([
-                                Forms\Components\TextInput::make('submitter_first_name')->disabled(),
-                                Forms\Components\TextInput::make('submitter_last_name')->disabled(),
-                                Forms\Components\TextInput::make('submitter_email')->disabled(),
+                                Forms\Components\TextInput::make('submitter_first_name'),
+                                Forms\Components\TextInput::make('submitter_last_name'),
+                                Forms\Components\TextInput::make('submitter_email')->email(),
                             ])->columns(3),
                     ])->columns(2),
             ]);
@@ -148,11 +220,22 @@ class DocumentResource extends Resource
                 Tables\Columns\TextColumn::make('title')->limit(30)->searchable(),
                 Tables\Columns\TextColumn::make('publisher')->searchable(),
                 
-                // 🔥 ADMIN BISA LANGSUNG ON/OFF VERIFIKASI DARI TABEL!
+                // 🔥 ADMIN BISA MELIHAT BADGE SDG LANGSUNG DI TABEL
+                Tables\Columns\TextColumn::make('sdgs.sdg_code')
+                    ->label('SDGs')
+                    ->badge()
+                    ->color('info')
+                    ->separator(','),
+
                 Tables\Columns\ToggleColumn::make('is_verified')
                     ->label('Verified'),
                     
-                Tables\Columns\TextColumn::make('submitter_email')->searchable()->toggleable(),
+                Tables\Columns\TextColumn::make('submitter_email')
+                    ->searchable()
+                    ->toggleable()
+                    ->copyable() // Fitur copy email sekali klik
+                    ->copyMessage('Email disalin!'),
+                    
                 Tables\Columns\TextColumn::make('pub_year')->sortable(),
                 Tables\Columns\TextColumn::make('citation_count')->sortable(),
             ])

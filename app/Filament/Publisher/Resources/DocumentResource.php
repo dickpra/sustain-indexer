@@ -20,10 +20,12 @@ class DocumentResource extends Resource
     // =======================================================
     // 🔥 FITUR ISOLASI DATA (MULTI-TENANCY SEDERHANA)
     // =======================================================
-    public static function getEloquentQuery(): Builder
+   public static function getEloquentQuery(): Builder
     {
         // Publisher HANYA BISA melihat dokumen yang submitter_email-nya sama dengan email login mereka
-        return parent::getEloquentQuery()->where('submitter_email', auth()->user()->email);
+        return parent::getEloquentQuery()
+            ->with('sdgs') // 🔥 Mencegah loading tabel yang berat
+            ->where('submitter_email', auth()->user()->email);
     }
 
     public static function form(Form $form): Form
@@ -45,73 +47,200 @@ class DocumentResource extends Resource
                             ->dehydrated() // Memastikan data yang di-disable tetap tersimpan ke database
                             ->required(),
 
-                        \Filament\Forms\Components\Textarea::make('abstract')
+                        // ==========================================
+                        // 🔥 ABSTRAK DENGAN LIVE AI TRANSLATOR & SCANNER (MURNI DARI CONFIG)
+                        // ==========================================
+                        Forms\Components\Textarea::make('abstract')
                             ->required()
                             ->columnSpanFull()
-                            ->rows(5),
+                            ->rows(5)
+                            ->live(debounce: 2000)
+                            ->afterStateUpdated(function (\Filament\Forms\Set $set, $state) {
+                                // Syarat 10 huruf agar gampang ditest
+                                if (empty($state) || strlen($state) < 10) {
+                                    $set('sdg_selections', []);
+                                    return;
+                                }
 
-                        // ==========================================
-                        // 🔥 TRIK SIHIR: GABUNGAN KEYWORD & SDGS
-                        // ==========================================
-                        \Filament\Forms\Components\CheckboxList::make('sdg_selections')
-                            ->label('Sustainable Development Goals (SDGs)')
-                            ->options([
-                                "SDG 1: No Poverty" => "SDG 1: No Poverty",
-                                "SDG 2: Zero Hunger" => "SDG 2: Zero Hunger",
-                                "SDG 3: Good Health and Well-being" => "SDG 3: Good Health",
-                                "SDG 4: Quality Education" => "SDG 4: Quality Education",
-                                "SDG 5: Gender Equality" => "SDG 5: Gender Equality",
-                                "SDG 6: Clean Water and Sanitation" => "SDG 6: Clean Water",
-                                "SDG 7: Affordable and Clean Energy" => "SDG 7: Clean Energy",
-                                "SDG 8: Decent Work and Economic Growth" => "SDG 8: Economic Growth",
-                                "SDG 9: Industry, Innovation and Infrastructure" => "SDG 9: Industry & Innovation",
-                                "SDG 10: Reduced Inequality" => "SDG 10: Reduced Inequality",
-                                "SDG 11: Sustainable Cities and Communities" => "SDG 11: Sustainable Cities",
-                                "SDG 12: Responsible Consumption and Production" => "SDG 12: Responsible Consumption",
-                                "SDG 13: Climate Action" => "SDG 13: Climate Action",
-                                "SDG 14: Life Below Water" => "SDG 14: Life Below Water",
-                                "SDG 15: Life on Land" => "SDG 15: Life on Land",
-                                "SDG 16: Peace and Justice Strong Institutions" => "SDG 16: Peace & Justice",
-                                "SDG 17: Partnerships to achieve the Goal" => "SDG 17: Partnerships"
-                            ])
-                            ->columns(3) 
-                            ->gridDirection('row')
-                            ->columnSpanFull()
-                            ->dehydrated(false)
-                            ->default([]) // 🔥 OBAT 1: Paksa jadi array kosong secara default
-                            ->afterStateHydrated(function (\Filament\Forms\Components\CheckboxList $component, $state, $record) {
-                                // Saat form EDIT dibuka, ekstrak SDG dari dalam string keywords
-                                if ($record && $record->keywords) {
-                                    $keywordsArray = array_map('trim', explode(',', $record->keywords));
-                                    $sdgs = array_filter($keywordsArray, fn($kw) => str_starts_with($kw, 'SDG'));
-                                    $component->state(array_values($sdgs));
-                                } else {
-                                    // 🔥 OBAT 2: Kalau bikin baru (Create), pastikan statusnya array kosong!
-                                    $component->state([]); 
+                                $textToScan = strtolower($state);
+                                
+                                // 1. Translasi AI Otomatis (Stichoza)
+                                try {
+                                    $tr = new \Stichoza\GoogleTranslate\GoogleTranslate('en');
+                                    $translated = $tr->translate($state);
+                                    if ($translated) {
+                                        $textToScan = strtolower($translated);
+                                    }
+                                } catch (\Exception $e) {
+                                    // Abaikan jika error, pakai teks asli
+                                }
+
+                                // 2. 🔥 TARIK DATA MURNI DARI CONFIG BOS
+                                $dictionary = config('sdg.keywords'); 
+                                
+                                // Jika config kebetulan kosong/tidak terbaca, hentikan proses
+                                if (!is_array($dictionary) || empty($dictionary)) {
+                                    return;
+                                }
+
+                                $sdgFullNames = [
+                                    'sdg1' => 'SDG 1: No Poverty', 'sdg2' => 'SDG 2: Zero Hunger', 'sdg3' => 'SDG 3: Good Health and Well-being',
+                                    'sdg4' => 'SDG 4: Quality Education', 'sdg5' => 'SDG 5: Gender Equality', 'sdg6' => 'SDG 6: Clean Water and Sanitation',
+                                    'sdg7' => 'SDG 7: Affordable and Clean Energy', 'sdg8' => 'SDG 8: Decent Work and Economic Growth',
+                                    'sdg9' => 'SDG 9: Industry Innovation and Infrastructure', 'sdg10' => 'SDG 10: Reduced Inequality',
+                                    'sdg11' => 'SDG 11: Sustainable Cities and Communities', 'sdg12' => 'SDG 12: Responsible Consumption and Production',
+                                    'sdg13' => 'SDG 13: Climate Action', 'sdg14' => 'SDG 14: Life Below Water', 'sdg15' => 'SDG 15: Life on Land',
+                                    'sdg16' => 'SDG 16: Peace and Justice Strong Institutions', 'sdg17' => 'SDG 17: Partnerships to achieve the Goal'
+                                ];
+
+                                $detectedSdgs = [];
+                                
+                                // 3. Proses pemindaian yang sudah kebal typo/spasi
+                                foreach ($dictionary as $sdgId => $keywords) {
+                                    // Mengubah "SDG 1", "SDG-1", atau "sdg01" murni menjadi "sdg1"
+                                    $normalizedKey = strtolower(str_replace([' ', '-', ':'], '', $sdgId));
+                                    $normalizedKey = str_replace('sdg0', 'sdg', $normalizedKey);
+                                    
+                                    if (is_array($keywords)) {
+                                        foreach ($keywords as $kw) {
+                                            $kw = trim(strtolower($kw));
+                                            if (!empty($kw) && str_contains($textToScan, $kw)) {
+                                                if (isset($sdgFullNames[$normalizedKey])) {
+                                                    $detectedSdgs[] = $sdgFullNames[$normalizedKey];
+                                                }
+                                                break; // 🔥 1 kata kunci cocok, lencana langsung keluar!
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                $finalSdgs = array_values(array_unique($detectedSdgs));
+                                $set('sdg_selections', $finalSdgs);
+                                
+                                if (count($finalSdgs) > 0) {
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('🤖 AI Auto-Scan Success')
+                                        ->body('Deteksi ' . count($finalSdgs) . ' SDG berhasil.')
+                                        ->success()->send();
                                 }
                             }),
 
+                        // // ==========================================
+                        // // 🔥 FORM SDGs (Langsung tembak ke tabel relasi)
+                        // // ==========================================
+                        // \Filament\Forms\Components\CheckboxList::make('sdg_selections')
+                        //     ->label('Sustainable Development Goals (SDGs)')
+                        //     ->options([
+                        //         "SDG 1: No Poverty" => "SDG 1: No Poverty",
+                        //         "SDG 2: Zero Hunger" => "SDG 2: Zero Hunger",
+                        //         "SDG 3: Good Health and Well-being" => "SDG 3: Good Health",
+                        //         "SDG 4: Quality Education" => "SDG 4: Quality Education",
+                        //         "SDG 5: Gender Equality" => "SDG 5: Gender Equality",
+                        //         "SDG 6: Clean Water and Sanitation" => "SDG 6: Clean Water",
+                        //         "SDG 7: Affordable and Clean Energy" => "SDG 7: Clean Energy",
+                        //         "SDG 8: Decent Work and Economic Growth" => "SDG 8: Economic Growth",
+                        //         "SDG 9: Industry Innovation and Infrastructure" => "SDG 9: Industry & Innovation",
+                        //         "SDG 10: Reduced Inequality" => "SDG 10: Reduced Inequality",
+                        //         "SDG 11: Sustainable Cities and Communities" => "SDG 11: Sustainable Cities",
+                        //         "SDG 12: Responsible Consumption and Production" => "SDG 12: Responsible Consumption",
+                        //         "SDG 13: Climate Action" => "SDG 13: Climate Action",
+                        //         "SDG 14: Life Below Water" => "SDG 14: Life Below Water",
+                        //         "SDG 15: Life on Land" => "SDG 15: Life on Land",
+                        //         "SDG 16: Peace and Justice Strong Institutions" => "SDG 16: Peace & Justice",
+                        //         "SDG 17: Partnerships to achieve the Goal" => "SDG 17: Partnerships"
+                        //     ])
+                        //     ->columns(3) 
+                        //     ->gridDirection('row')
+                        //     ->columnSpanFull()
+                        //     ->dehydrated(false) // Jangan simpan ke kolom document utama
+                        //     ->afterStateHydrated(function (\Filament\Forms\Components\CheckboxList $component, $state, $record) {
+                        //         // SAAT EDIT DIBUKA: Tarik data dari tabel document_sdgs
+                        //         if ($record) {
+                        //             $component->state($record->sdgs->pluck('sdg_name')->toArray());
+                        //         }
+                        //     })
+                        //     ->saveRelationshipsUsing(function (\Illuminate\Database\Eloquent\Model $record, $state) {
+                        //         // SAAT DISIMPAN: Hapus yang lama, insert yang baru!
+                        //         $record->sdgs()->delete();
+                                
+                        //         if (is_array($state)) {
+                        //             foreach ($state as $sdgName) {
+                        //                 $parts = explode(':', $sdgName);
+                        //                 $record->sdgs()->create([
+                        //                     'sdg_code' => trim($parts[0]),
+                        //                     'sdg_name' => $sdgName
+                        //                 ]);
+                        //             }
+                        //         }
+                        //     }),
+
+                        // // ==========================================
+                        // // 🔥 FORM KEYWORD (Sekarang murni teks biasa)
+                        // // ==========================================
+                        // \Filament\Forms\Components\TextInput::make('keywords')
+                        //     ->label('Keywords')
+                        //     ->helperText('Separate with commas (e.g., carbon, climate, sustainability)')
+                        //     ->columnSpanFull(),
+
+                        // ==========================================
+                        // 🔥 WIDGET BADGE SDGs (HANYA BACA / OTOMATIS)
+                        // ==========================================
+                        \Filament\Forms\Components\Placeholder::make('sdg_badges')
+                            ->label('Sustainable Development Goals (SDGs)')
+                            ->content(function (\Filament\Forms\Get $get) {
+                                // Mengambil data dari hidden input secara real-time
+                                $sdgs = $get('sdg_selections') ?? [];
+                                
+                                if (empty($sdgs)) {
+                                    return new \Illuminate\Support\HtmlString('<span style="color: #888; font-style: italic;">⏳ AI is waiting for abstract to detect SDGs...</span>');
+                                }
+
+                                // Merender lencana (badge) keren jika AI menemukan SDG
+                                $html = '<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 5px;">';
+                                foreach ($sdgs as $sdg) {
+                                    $html .= '<span style="background-color: #003366; color: white; padding: 6px 14px; border-radius: 99px; font-size: 0.85rem; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">🤖 ' . e($sdg) . '</span>';
+                                }
+                                $html .= '</div>';
+                                
+                                return new \Illuminate\Support\HtmlString($html);
+                            })
+                            ->columnSpanFull(),
+
+                        // ==========================================
+                        // 🔥 HIDDEN INPUT UNTUK MENYIMPAN DATA ARRAY SDG
+                        // ==========================================
+                        \Filament\Forms\Components\Hidden::make('sdg_selections')
+                            ->dehydrated(false) // Tidak masuk ke tabel document utama
+                            ->afterStateHydrated(function (\Filament\Forms\Components\Hidden $component, $record) {
+                                // Saat form EDIT dibuka, panggil data SDG lama dari database
+                                if ($record && $record->sdgs) {
+                                    $component->state($record->sdgs->pluck('sdg_name')->toArray());
+                                } else {
+                                    $component->state([]);
+                                }
+                            })
+                            ->saveRelationshipsUsing(function (\Illuminate\Database\Eloquent\Model $record, $state) {
+                                // Saat form DISAVE, bersihkan SDG lama lalu suntikkan hasil AI yang baru
+                                $record->sdgs()->delete();
+                                
+                                if (is_array($state) && count($state) > 0) {
+                                    foreach ($state as $sdgName) {
+                                        $parts = explode(':', $sdgName);
+                                        $record->sdgs()->create([
+                                            'sdg_code' => trim($parts[0]),
+                                            'sdg_name' => $sdgName
+                                        ]);
+                                    }
+                                }
+                            }),
+
+                        // ==========================================
+                        // 🔥 FORM KEYWORD (Sekarang murni teks biasa)
+                        // ==========================================
                         \Filament\Forms\Components\TextInput::make('keywords')
                             ->label('Keywords (Non-SDG)')
                             ->helperText('Separate with commas (e.g., carbon, climate, sustainability)')
-                            ->columnSpanFull()
-                            ->afterStateHydrated(function (\Filament\Forms\Components\TextInput $component, $state, $record) {
-                                // Saat form EDIT dibuka, pisahkan keyword murni dari SDG
-                                if ($record && $record->keywords) {
-                                    $keywordsArray = array_map('trim', explode(',', $record->keywords));
-                                    $pureKeywords = array_filter($keywordsArray, fn($kw) => !str_starts_with($kw, 'SDG'));
-                                    $component->state(implode(', ', $pureKeywords));
-                                }
-                            })
-                            ->dehydrateStateUsing(function ($state, \Filament\Forms\Get $get) {
-                                // SAAT DISAVE: Gabungkan input text keywords + centangan SDGs
-                                $sdgs = $get('sdg_selections') ?? [];
-                                $pureKeywords = array_filter(array_map('trim', explode(',', $state)));
-                                $finalKeywords = array_merge($pureKeywords, $sdgs);
-                                
-                                return implode(', ', $finalKeywords);
-                            }),
-                        // ==========================================
+                            ->columnSpanFull(),
 
                         \Filament\Forms\Components\Select::make('document_type')
                             ->options([
@@ -297,6 +426,12 @@ class DocumentResource extends Resource
                 Tables\Columns\TextColumn::make('title')->searchable()->limit(30),
                 Tables\Columns\TextColumn::make('journal_title')->searchable(),
                 Tables\Columns\TextColumn::make('publisher')->searchable(),
+                // 🔥 TAMBAHKAN KOLOM BADGE SDG DI SINI
+                Tables\Columns\TextColumn::make('sdgs.sdg_code')
+                    ->label('SDGs')
+                    ->badge()
+                    ->color('info')
+                    ->separator(','), // Akan menghasilkan: SDG 1, SDG 13
                 Tables\Columns\TextColumn::make('document_type')->searchable(),
                 Tables\Columns\TextColumn::make('pub_year')->searchable(),
                 Tables\Columns\TextColumn::make('citation_count')->numeric()->sortable(),

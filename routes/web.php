@@ -118,3 +118,8 @@ Route::post('/api/scan-sdg', [\App\Http\Controllers\BetaSubmitController::class,
 Route::get('/submit-beta/scan', function () {
     return redirect('/submit-beta')->with('error', 'Session expired or validation failed. Please re-upload your PDF.');
 });
+
+Route::get('/page/{slug}', function ($slug) {
+    $page = \App\Models\Page::where('slug', $slug)->where('is_active', true)->firstOrFail();
+    return view('page', compact('page'));
+});

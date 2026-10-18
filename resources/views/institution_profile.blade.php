@@ -68,28 +68,44 @@
     <div id="map" style="height: 400px; width: 100%;"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Kita kasih delay 0.5 detik biar HTML-nya selesai di-render dulu
-            setTimeout(function() {
-                const lat = parseFloat("{{ $institution->lat }}".replace(',', '.')); // Otomatis ubah koma jadi titik
-                const lng = parseFloat("{{ $institution->lng }}".replace(',', '.'));
+    
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        setTimeout(function () {
+            const lat = parseFloat(
+                "{{ $institution->lat }}".replace(',', '.')
+            );
 
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    console.log("Memuat peta di koordinat:", lat, lng);
-                    
-                    const map = L.map('map').setView([lat, lng], 15);
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                        attribution: '&copy; OpenStreetMap'
-                    }).addTo(map);
+            const lng = parseFloat(
+                "{{ $institution->lng }}".replace(',', '.')
+            );
 
-                    L.marker([lat, lng]).addTo(map).bindPopup("<b>{{ $institution->name }}</b>").openPopup();
-                } else {
-                    document.getElementById('map').innerHTML = "<h3 style='color:red; text-align:center; margin-top:150px;'>Error: Koordinat bukan angka!</h3>";
-                }
-            }, 500);
-        });
-    </script>
+            if (!isNaN(lat) && !isNaN(lng)) {
+                console.log("Memuat peta di koordinat:", lat, lng);
+
+                const map = L.map('map').setView([lat, lng], 15);
+
+                // Basemap OpenStreetMap - gratis
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution:
+                        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+                    maxZoom: 19
+                }).addTo(map);
+
+                // Marker lokasi institusi
+                L.marker([lat, lng])
+                    .addTo(map)
+                    .bindPopup("<b>{{ addslashes($institution->name) }}</b>")
+                    .openPopup();
+
+            } else {
+                document.getElementById('map').innerHTML =
+                    "<h3 style='color:red; text-align:center; margin-top:150px;'>Error: Koordinat bukan angka!</h3>";
+            }
+        }, 500);
+    });
+</script>
+
 @else
     <div class="bg-light border-bottom">
         <div class="container py-3 text-center text-muted small">
