@@ -40,12 +40,12 @@
                     </a>
                 </li>
                 <li>
-                    <hr class="dropdown-divider"></li>
+                    {{-- <hr class="dropdown-divider"></li>
                          <li>
                             <a class="dropdown-item py-2 fw-medium text-dark" href="/publisher" style="margin-left: 0; border: none;">
                                 <i class="bi bi-filetype-xml text-success me-2"></i>Upload XML (Publisher)
                             </a>
-                 </li>
+                 </li> --}}
             </ul>
         </div>
         

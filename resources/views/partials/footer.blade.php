@@ -176,8 +176,8 @@
                                 <li><a class="dropdown-item" href="/submit"><i class="bi bi-file-earmark-pdf-fill text-danger"></i><span class="item-title">Upload PDF</span></a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="/submit-beta"><i class="bi bi-robot text-primary"></i><span><span class="item-title">Upload PDF (AI)</span><small>Extraction via Groq AI &amp; Crossref</small></span></a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="/publisher"><i class="bi bi-filetype-xml text-success"></i><span class="item-title">Upload XML (Publisher)</span></a></li>
+                                {{-- <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/publisher"><i class="bi bi-filetype-xml text-success"></i><span class="item-title">Upload XML (Publisher)</span></a></li> --}}
                             </ul>
                         </div>
                     </div>

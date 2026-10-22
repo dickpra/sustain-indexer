@@ -18,23 +18,53 @@ use App\Http\Controllers\JournalController;
 // BERANDA & PENCARIAN
 // ==========================================
 Route::get('/', function () {
-    // 1. Top Articles (Most Cited & Most Popular)
-    $mostCited = \App\Models\Document::where('is_verified', true)->orderBy('citation_count', 'desc')->take(3)->get();
-    $mostPopular = \App\Models\Document::where('is_verified', true)->orderBy('views', 'desc')->take(3)->get();
+    // 1. Top Articles
+    $mostCited = \App\Models\Document::where('is_verified', true)
+                    ->orderBy('citation_count', 'desc')
+                    ->orderBy('title', 'asc') // Tie-breaker abjad judul
+                    ->take(3)->get();
+    
+    $mostPopular = \App\Models\Document::where('is_verified', true)
+                    ->orderBy('views', 'desc')
+                    ->orderBy('title', 'asc')
+                    ->take(3)->get();
 
-    // 2. 🔥 TOP RESEARCHERS
+    // 2. Top Researchers
     $topResearchers = \App\Models\Author::withCount('documents')
                         ->orderBy('documents_count', 'desc')
-                        ->take(5)
-                        ->get();
+                        ->orderBy('name', 'asc') // Tie-breaker abjad nama
+                        ->take(3)->get();
 
-    // 3. 🔥 TOP INSTITUTIONS
+    // 3. Top Institutions
     $topInstitutions = \App\Models\Institution::withCount('authors')
-                         ->orderBy('authors_count', 'desc')
-                         ->take(5)
-                         ->get();
+                        ->orderBy('authors_count', 'desc')
+                        ->orderBy('name', 'asc')
+                        ->take(3)->get();
 
-    // 4. Global Stats
+    // 4. Top Sustainable (Data Asli Point 0.1)
+    $topSustainable = \App\Models\Author::with('institution')
+        ->addSelect(['sdg_count' => \Illuminate\Support\Facades\DB::table('document_sdgs')
+            ->join('author_document', 'document_sdgs.document_id', '=', 'author_document.document_id')
+            ->whereColumn('author_document.author_id', 'authors.id')
+            ->selectRaw('count(*)')
+        ])
+        ->orderByDesc('sdg_count')
+        ->orderBy('authors.name', 'asc') // 🔥 FIX BUG: Urutkan abjad jika poin sama
+        ->take(3)->get();
+
+    // 5. Rising Stars
+    $risingStars = \App\Models\Author::with('institution')
+        ->addSelect(['recent_docs' => \Illuminate\Support\Facades\DB::table('documents')
+            ->join('author_document', 'documents.id', '=', 'author_document.document_id')
+            ->whereColumn('author_document.author_id', 'authors.id')
+            ->where('pub_year', '>=', date('Y') - 2)
+            ->selectRaw('count(*)')
+        ])
+        ->orderByDesc('recent_docs')
+        ->orderBy('authors.name', 'asc') // 🔥 FIX BUG: Urutkan abjad jika seri
+        ->take(3)->get();
+
+    // 6. Global Stats
     $totalDocuments = \App\Models\Document::count();
     $totalAuthors = \App\Models\Author::count();
     $totalVisitors = \App\Models\Document::where('is_verified', true)->sum('views');
@@ -43,7 +73,8 @@ Route::get('/', function () {
 
     return view('home', compact(
         'mostCited', 'mostPopular', 'topResearchers', 'topInstitutions',
-        'totalDocuments', 'totalAuthors', 'totalInstitutions', 'totalCountries', 'totalVisitors'
+        'totalDocuments', 'totalAuthors', 'totalInstitutions', 'totalCountries', 'totalVisitors',
+        'topSustainable', 'risingStars'
     )); 
 });
 
@@ -123,3 +154,4 @@ Route::get('/page/{slug}', function ($slug) {
     $page = \App\Models\Page::where('slug', $slug)->where('is_active', true)->firstOrFail();
     return view('page', compact('page'));
 });
+Route::get('/rankings', [HomeController::class, 'rankings'])->name('rankings.index');

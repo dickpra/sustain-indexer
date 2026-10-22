@@ -16,6 +16,7 @@ class AuthorInstitutionController extends Controller
         // Kalau yang minta data adalah Javascript (Fetch)
         if ($request->wantsJson() || $request->ajax()) {
             $documents = $author->documents()
+                        ->with('sdgs')
                         ->where('is_verified', true)
                         ->latest()
                         ->paginate(10);

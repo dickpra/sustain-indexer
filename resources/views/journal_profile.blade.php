@@ -34,7 +34,6 @@
         .academic-footer a:hover { text-decoration: underline; }
         .footer-logo { font-family: 'Georgia', serif; font-size: 1.4rem; font-weight: bold; color: #003366; }
 
-
         /* ========================================================= */
         /* 2. CSS KHUSUS HALAMAN JURNAL (BANNER & FLOATING CARD)     */
         /* ========================================================= */
@@ -103,11 +102,11 @@
 <!-- ========================================== -->
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-10"> <!-- Diperlebar jadi col-md-10 -->
+        <div class="col-md-10">
             <div class="stats-card p-4">
                 <div class="row text-center">
                     
-                    <!-- S-FACTOR (BINTANG UTAMANYA) -->
+                    <!-- S-FACTOR -->
                     <div class="col-3 border-end">
                         <div class="text-muted small fw-bold text-uppercase mb-1" style="color: #cc0000 !important;">🔥 S-Factor</div>
                         <div class="fs-2 fw-bold text-danger">{{ $sFactor }}</div>
@@ -178,8 +177,20 @@
                     <div class="doc-meta mt-3">
                         <span class="badge bg-secondary rounded-pill">{{ $doc->document_type ?: 'Journal Article' }}</span>
                         <span class="ms-2">Pub Year: {{ $doc->pub_year ?: 'N/A' }}</span>
+                        <span class="ms-2">| ID: {{ $doc->document_number }}</span>
                         @if($doc->doi)
                             <span class="ms-2">| <a href="{{ $doc->doi }}" target="_blank" class="text-success text-decoration-none fw-bold">DOI</a></span>
+                        @endif
+                        
+                        <!-- 🔥 WIDGET BADGE SDGs BARU -->
+                        @if($doc->sdgs && $doc->sdgs->count() > 0)
+                        <div class="mt-3 mb-2 d-flex flex-wrap gap-1">
+                            @foreach($doc->sdgs as $sdg)
+                                <a href="/results?sdg={{ urlencode($sdg->sdg_code) }}" class="badge rounded-pill shadow-sm text-decoration-none" style="background-color: #f4f8fc; color: #003366; border: 1px solid #003366; font-weight: bold; font-size: 0.75rem;">
+                                    <i class="bi bi-bullseye text-danger me-1"></i> {{ $sdg->sdg_code }}
+                                </a>
+                            @endforeach
+                        </div>
                         @endif
                     </div>
                 </div>

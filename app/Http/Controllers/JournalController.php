@@ -25,6 +25,7 @@ class JournalController extends Controller
         $documents = \App\Models\Document::with('authors') 
                         ->where('journal_title', $journalName)
                         ->where('is_verified', true)
+                        ->with(['authors', 'sdgs'])
                         ->latest()
                         ->paginate(15);
 

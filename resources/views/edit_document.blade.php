@@ -30,6 +30,13 @@
         .primary-badge { background: #cc0000 !important; }
         
         #map { height: 300px; width: 100%; border: 1px solid #ccc; margin-top: 10px; }
+
+        /* 🔥 FIX BUG: Animasi Lencana Muncul */
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -67,32 +74,29 @@
                 </div>
 
                 <div class="row mb-4 bg-light p-3 border">
-                        <div class="col-md-6 mb-3 mb-md-0">
-                            <!-- Hapus (Optional), tambah bintang dan required -->
-                            <label class="form-label">Journal / Conference Name <span class="text-danger">*</span></label>
-                            <input type="text" name="journal_title" class="form-control" value="{{ $document->journal_title ?? '' }}" required>
-                            <small class="text-muted">Where was this published?</small>
-                        </div>
-                        <div class="col-md-6">
-                            <!-- Hapus (Optional), tambah bintang dan required -->
-                            <label class="form-label">Publisher <span class="text-danger">*</span></label>
-                            <input type="text" name="publisher" class="form-control" value="{{ $document->publisher ?? '' }}" required>
-                            <small class="text-muted">Who is the publisher?</small>
-                        </div>
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <label class="form-label">Journal / Conference Name <span class="text-danger">*</span></label>
+                        <input type="text" name="journal_title" class="form-control" value="{{ $document->journal_title ?? '' }}" required>
+                        <small class="text-muted">Where was this published?</small>
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Publisher <span class="text-danger">*</span></label>
+                        <input type="text" name="publisher" class="form-control" value="{{ $document->publisher ?? '' }}" required>
+                        <small class="text-muted">Who is the publisher?</small>
+                    </div>
+                </div>
 
                 <div class="mb-4">
                     <label class="form-label">Abstract <span class="text-danger">*</span></label>
                     <textarea name="abstract" class="form-control" rows="8" required>{{ $document->abstract }}</textarea>
                 </div>
 
-
-               <div class="mb-4">
+                <div class="mb-4">
                     <label class="form-label">Keywords</label>
                     <input type="text" name="keywords" class="form-control" value="{{ $document->keywords }}">
                     <small class="text-muted d-block mt-1">Separate multiple keywords with commas.</small>
                     
-                    <!-- 🔥 WADAH BADGE AI (Memuat SDG lama dari database) -->
+                    <!-- 🔥 WADAH BADGE AI -->
                     <div id="sdgBadgeContainer" class="mt-2 d-flex flex-wrap gap-2">
                         @if($document->sdgs && $document->sdgs->count() > 0)
                             @foreach($document->sdgs as $sdg)
@@ -103,7 +107,7 @@
                         @endif
                     </div>
                     
-                    <!-- 🔥 HIDDEN INPUT (Mempertahankan data lama agar tidak hilang saat disave) -->
+                    <!-- 🔥 HIDDEN INPUT -->
                     <div id="hiddenSdgInputs">
                         @if($document->sdgs && $document->sdgs->count() > 0)
                             @foreach($document->sdgs as $sdg)
@@ -323,7 +327,6 @@
         authorIndex = authorCards.length - 1;
     }
 
-    // --- SCRIPT MAP & AUTOCOMPLETE (SAMA PERSIS DENGAN SUBMIT) ---
     let map = null;
     let marker = null;
     
@@ -451,7 +454,7 @@
     });
 
     // ==========================================
-    // 🤖 BETA AI V6: NINJA HIDDEN INPUTS (UNTUK HALAMAN EDIT)
+    // 🤖 BETA AI V6: NINJA HIDDEN INPUTS & PASTE FIX
     // ==========================================
     const sdgFullNames = {
         'sdg1': 'SDG 1: No Poverty', 'sdg2': 'SDG 2: Zero Hunger', 'sdg3': 'SDG 3: Good Health and Well-being',
@@ -473,7 +476,6 @@
         const text = abstractInput.value;
         const badgeContainer = document.getElementById('sdgBadgeContainer');
 
-        // Jika abstrak dikosongkan, hapus semua
         if (text.length < 30) {
             if (badgeContainer) badgeContainer.innerHTML = ''; 
             if (hiddenSdgContainer) hiddenSdgContainer.innerHTML = ''; 
@@ -507,7 +509,6 @@
                 }
             });
 
-            // Ganti SDG lama dengan hasil Scan terbaru dari AI!
             if (hiddenSdgContainer) hiddenSdgContainer.innerHTML = ''; 
             if (badgeContainer) badgeContainer.innerHTML = ''; 
 
@@ -548,11 +549,16 @@
     }
 
     if (abstractInput) {
-        // AI hanya memindai ulang jika user MENGETIK (mengubah) abstraknya.
-        // Jika tidak diubah, data SDG lama tetap dipertahankan.
+        // 🔥 FIX BUG: Tangkap event ketikan (input)
         abstractInput.addEventListener('input', function() {
             clearTimeout(aiDebounceTimer);
             aiDebounceTimer = setTimeout(() => scanAbstractForSDG(true), 1500);
+        });
+
+        // 🔥 FIX BUG: Tangkap khusus event "Paste" agar merespon lebih cepat (0.5 detik)
+        abstractInput.addEventListener('paste', function() {
+            clearTimeout(aiDebounceTimer);
+            aiDebounceTimer = setTimeout(() => scanAbstractForSDG(true), 500);
         });
     }
 </script>

@@ -226,16 +226,44 @@
             // Render ulang kartu jurnal
             data.forEach(doc => {
                 const abstract = doc.abstract ? doc.abstract.substring(0, 250) + '...' : '';
+                
+                // 1. 🔥 Cek dan Buat Link DOI jika ada
+                const doiHtml = doc.doi ? `<span class="ms-2">| <a href="${doc.doi}" target="_blank" class="text-success text-decoration-none fw-bold">DOI</a></span>` : '';
+                
+                // 2. 🔥 Cek dan Buat Lencana SDGs jika ada
+                let sdgHtml = '';
+                if (doc.sdgs && doc.sdgs.length > 0) {
+                    sdgHtml = '<div class="mt-3 mb-2 d-flex flex-wrap gap-1">';
+                    doc.sdgs.forEach(sdg => {
+                        sdgHtml += `<a href="/results?sdg=${encodeURIComponent(sdg.sdg_code)}" class="badge rounded-pill shadow-sm text-decoration-none" style="background-color: #f4f8fc; color: #003366; border: 1px solid #003366; font-weight: bold; font-size: 0.75rem;">
+                                        <i class="bi bi-bullseye text-danger me-1"></i> ${sdg.sdg_code}
+                                    </a>`;
+                    });
+                    sdgHtml += '</div>';
+                }
+
+                // 3. Rakit Kartu HTML
                 const card = `
                     <div class="doc-card">
-                        <span class="badge bg-light text-dark border mb-2">${doc.document_type || 'Journal Article'}</span>
-                        <span class="text-muted small ms-2">${doc.pub_year || 'N/A'}</span>
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <span class="badge bg-light text-dark border">${doc.document_type || 'Journal Article'}</span>
+                                <span class="text-muted small ms-2">${doc.pub_year || 'N/A'}</span>
+                                <span class="text-muted small ms-2">| ID: ${doc.document_number}</span>
+                                ${doiHtml}
+                            </div>
+                            <span class="badge rounded-pill bg-white text-primary border border-primary px-2 py-1 shadow-sm" style="font-size: 0.7rem;">
+                                <i class="bi bi-chat-quote-fill me-1"></i> Cited by ${doc.citation_count || 0}
+                            </span>
+                        </div>
                         
                         <div>
                             <a href="/document/${doc.document_number}" class="doc-title">${doc.title}</a>
                         </div>
                         
                         <p class="text-muted small mt-2 mb-0" style="line-height: 1.6;">${abstract}</p>
+                        
+                        ${sdgHtml}
                     </div>
                 `;
                 resultsContainer.insertAdjacentHTML('beforeend', card);
